@@ -9,7 +9,7 @@ import { useService } from "@web/core/utils/hooks";
 const { DateTime } = luxon;
 
 // Chart roles (reference data-viz palette, validated: blue / orange / aqua).
-const INK = {
+export const INK = {
     primary: "#0b0b0b",
     secondary: "#52514e",
     muted: "#898781",
@@ -18,10 +18,10 @@ const INK = {
     surface: "#fcfcfb",
     border: "rgba(11,11,11,0.10)",
 };
-const SERIES = ["#2a78d6", "#eb6834", "#1baf7a"];
-const NEUTRAL = "#c3c2b7";
+export const SERIES = ["#2a78d6", "#eb6834", "#1baf7a"];
+export const NEUTRAL = "#c3c2b7";
 
-const PRESETS = [
+export const PRESETS = [
     { key: "today", label: "Today" },
     { key: "7d", label: "Last 7 days" },
     { key: "30d", label: "Last 30 days" },
@@ -31,7 +31,7 @@ const PRESETS = [
     { key: "year", label: "This year" },
 ];
 
-function presetRange(key) {
+export function presetRange(key) {
     const today = DateTime.now().startOf("day");
     switch (key) {
         case "today":
@@ -86,7 +86,7 @@ const barEndLabels = {
     },
 };
 
-function baseOptions({ horizontal = false, stacked = false, format = (v) => String(v), tickFormat }) {
+export function baseOptions({ horizontal = false, stacked = false, format = (v) => String(v), tickFormat }) {
     const valueAxis = horizontal ? "x" : "y";
     const categoryAxis = horizontal ? "y" : "x";
     return {
@@ -145,7 +145,7 @@ function baseOptions({ horizontal = false, stacked = false, format = (v) => Stri
     };
 }
 
-function barDataset(label, data, color, extra = {}) {
+export function barDataset(label, data, color, extra = {}) {
     return {
         label,
         data,
@@ -163,7 +163,7 @@ function barDataset(label, data, color, extra = {}) {
 export class DashChart extends Component {
     static template = "hospital_doctor_dashboard.DashChart";
     static props = {
-        config: Object,
+        config: [Object, Function],
         label: String,
         height: { type: Number, optional: true },
     };
@@ -172,8 +172,10 @@ export class DashChart extends Component {
         this.canvasRef = useRef("canvas");
         useEffect(
             (config) => {
+                // A factory gives each chart instance its own config (Chart.js mutates it).
+                const resolved = typeof config === "function" ? config() : config;
                 const chart = new Chart(this.canvasRef.el, {
-                    ...config,
+                    ...resolved,
                     plugins: [barEndLabels],
                 });
                 return () => chart.destroy();

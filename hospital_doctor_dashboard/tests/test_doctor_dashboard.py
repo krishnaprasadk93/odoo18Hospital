@@ -60,3 +60,10 @@ class TestDoctorDashboard(TransactionCase):
         self.assertEqual(data['period']['bucket'], 'week')
         self.assertEqual(data['kpis']['visits_prev'], 0)
         self.assertEqual(sum(data['visits_series']['values']), 2)
+
+    def test_legacy_timezone_name(self):
+        # Browsers may report the legacy name, which PostgreSQL may not know.
+        self.doctor_user.tz = 'Asia/Calcutta'
+        data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
+            self.today, self.today, doctor_id=self.doctor.id)
+        self.assertEqual(data['kpis']['visits'], 2)

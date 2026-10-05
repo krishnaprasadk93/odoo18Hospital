@@ -1,0 +1,104 @@
+// Builds on the shared .o_hd_dashboard styles from hospital_doctor_dashboard.
+.o_hi_dashboard {
+    --hd-critical: #d03b3b;
+    --hd-warning-ink: #8a5a00;
+
+    &.o_hi_fullscreen .o_hd_scroll { padding: 24px 32px; }
+
+    .o_hi_header_actions { display: flex; align-items: center; gap: 8px; }
+
+    // ---------------- KPI tiles (clickable ones jump to their list)
+    // Eight tiles: 4 x 2 on wide screens, 2 x 4 on tablets, 1 column on phones.
+    .o_hi_kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 1199.98px) { .o_hi_kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) { .o_hi_kpis { grid-template-columns: minmax(0, 1fr); } }
+    .o_hi_kpi_link {
+        text-align: left;
+        cursor: pointer;
+        &:hover { border-color: var(--hd-accent); }
+        &:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 2px; }
+    }
+    .o_hi_kpi_alert { border-left: 3px solid var(--hd-critical); }
+    .o_hi_alert_icon { color: var(--hd-critical); }
+
+    // ---------------- Status strip
+    .o_hi_status {
+        border-left: 2px solid;
+        padding: 2px 10px;
+    }
+
+    // ---------------- Lists
+    .o_hi_lists { margin-bottom: 12px; scroll-margin-top: 12px; }
+    .o_hi_tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        border-bottom: 1px solid var(--hd-hairline);
+        margin-bottom: 8px;
+    }
+    .o_hi_tab {
+        border: 0;
+        background: transparent;
+        color: var(--hd-ink-2);
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        &:hover { color: var(--hd-ink); }
+        &.o_hi_tab_active {
+            color: var(--hd-ink);
+            font-weight: 600;
+            border-bottom-color: var(--hd-accent);
+        }
+    }
+    .o_hi_badge {
+        display: inline-block;
+        min-width: 22px;
+        margin-left: 6px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(11, 11, 11, 0.06);
+        color: var(--hd-ink);
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+    }
+    .o_hi_list_wrap { max-height: 360px; overflow: auto; }
+    .o_hi_row { cursor: pointer; }
+    .o_hi_pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: rgba(250, 178, 25, 0.16);
+        color: var(--hd-warning-ink);
+        font-size: 12px;
+        white-space: nowrap;
+        &.o_hi_pill_critical { background: rgba(208, 59, 59, 0.12); color: var(--hd-critical); }
+    }
+    .o_hi_negative { color: var(--hd-critical); font-weight: 600; }
+
+    .o_hi_card_actions { display: flex; gap: 2px; }
+
+    // ---------------- Expanded chart
+    .o_hi_overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1060;
+        background: var(--hd-page);
+        padding: 20px 28px;
+        display: flex;
+        flex-direction: column;
+    }
+    .o_hi_overlay_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    @media (max-width: 767.98px) {
+        .o_hd_header { flex-direction: column; align-items: flex-start; }
+        .o_hi_tab { padding: 6px 8px; }
+    }
+}

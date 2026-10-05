@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Card header: title, table toggle and full-screen expand -->
+    <t t-name="hospital_inventory_dashboard.CardHead">
+        <div class="o_hd_card_head">
+            <div>
+                <h3 class="o_hd_card_title" t-esc="title"/>
+                <div t-if="subtitle" class="o_hd_card_sub" t-esc="subtitle"/>
+            </div>
+            <div class="o_hi_card_actions">
+                <button type="button" class="btn btn-link btn-sm o_hd_toggle" t-on-click="() => this.toggleTable(chartKey)">
+                    <t t-if="state.tables[chartKey]"><i class="fa fa-bar-chart me-1"/>Chart</t>
+                    <t t-else=""><i class="fa fa-table me-1"/>Table</t>
+                </button>
+                <button type="button" class="btn btn-link btn-sm o_hd_toggle" title="Expand chart"
+                        aria-label="Expand chart" t-on-click="() => this.expand(chartKey)">
+                    <i class="fa fa-expand"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="hospital_inventory_dashboard.Dashboard">
+        <div t-ref="root" t-att-class="{ 'o_action o_hd_dashboard o_hi_dashboard': true, 'o_hi_fullscreen': state.fullscreen }">
+            <div class="o_hd_scroll">
+
+                <!-- ============ Header ============ -->
+                <div class="o_hd_header">
+                    <div>
+                        <h1 class="o_hd_title">Inventory Dashboard</h1>
+                        <div class="o_hd_subtitle" t-if="state.data">
+                            Movements <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
+                            <span class="o_hd_muted"> · stock as of now<t t-if="state.lastUpdated"> (updated <t t-esc="state.lastUpdated"/>)</t></span>
+                            <span t-if="state.fullscreen" class="o_hd_muted"> · refreshes every 5 min</span>
+                        </div>
+                    </div>
+                    <div class="o_hi_header_actions">
+                        <span t-if="state.loading" class="o_hd_muted"><i class="fa fa-circle-o-notch fa-spin me-1"/>Loading…</span>
+                        <button type="button" class="btn btn-secondary btn-sm" t-on-click="() => this.load()" title="Refresh">
+                            <i class="fa fa-refresh"/>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" t-on-click="toggleFullscreen">
+                            <t t-if="state.fullscreen"><i class="fa fa-compress me-1"/>Exit full screen</t>
+                            <t t-else=""><i class="fa fa-arrows-alt me-1"/>Full screen</t>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============ Filters ============ -->
+                <div class="o_hd_filters">
+                    <div class="o_hd_presets" role="group" aria-label="Date range">
+                        <t t-foreach="presets" t-as="p" t-key="p.key">
+                            <button type="button" class="o_hd_chip"
+                                    t-att-class="{ 'o_hd_chip_active': state.preset === p.key }"
+                                    t-att-aria-pressed="state.preset === p.key ? 'true' : 'false'"
+                                    t-on-click="() => this.onPreset(p.key)">
+                                <i t-if="state.preset === p.key" class="fa fa-check me-1"/>
+                                <t t-esc="p.label"/>
+                            </button>
+                        </t>
+                    </div>
+                    <div class="o_hd_dates">
+                        <label class="o_hd_field">
+                            <span>From</span>
+                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom"
+                                   t-att-max="state.dateTo" t-on-change="(ev) => this.onDateChange('dateFrom', ev)"/>
+                        </label>
+                        <label class="o_hd_field">
+                            <span>To</span>
+                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo"
+                                   t-att-min="state.dateFrom" t-on-change="(ev) => this.onDateChange('dateTo', ev)"/>
+                        </label>
+                        <label class="o_hd_field">
+                            <span>Warehouse</span>
+                            <select class="form-select form-select-sm" t-on-change="onWarehouseChange">
+                                <option value="" t-att-selected="!state.warehouseId">All warehouses</option>
+                                <t t-foreach="state.options.warehouses" t-as="w" t-key="w.id">
+                                    <option t-att-value="w.id" t-att-selected="isWarehouseSelected(w.id)" t-esc="w.name"/>
+                                </t>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="o_hd_presets" role="group" aria-label="Products">
+                        <button type="button" class="o_hd_chip" t-att-class="{ 'o_hd_chip_active': state.scope === 'medicine' }"
+                                t-on-click="() => this.setScope('medicine')">
+                            <i t-if="state.scope === 'medicine'" class="fa fa-check me-1"/>Medicines
+                        </button>
+                        <button type="button" class="o_hd_chip" t-att-class="{ 'o_hd_chip_active': state.scope === 'all' }"
+                                t-on-click="() => this.setScope('all')">
+                            <i t-if="state.scope === 'all'" class="fa fa-check me-1"/>All stocked products
+                        </button>
+                    </div>
+                </div>
+
+                <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>
+
+                <t t-if="state.data">
+                    <div t-att-class="{ 'o_hd_body': true, 'o_hd_dim': state.loading }">
+
+                        <!-- ============ KPI tiles ============ -->
+                        <div class="o_hd_kpis o_hi_kpis">
+                            <t t-foreach="kpiTiles" t-as="tile" t-key="tile.key">
+                                <t t-if="tile.list or tile.key === 'pending'">
+                                    <button type="button" t-att-class="{ 'o_hd_card o_hd_kpi o_hi_kpi_link': true, 'o_hi_kpi_alert': tile.alert }"
+                                            t-on-click="() => this.onTile(tile)">
+                                        <div class="o_hd_kpi_label">
+                                            <i t-if="tile.alert" class="fa fa-exclamation-circle me-1 o_hi_alert_icon" aria-hidden="true"/>
+                                            <t t-esc="tile.label"/>
+                                        </div>
+                                        <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                        <div class="o_hd_kpi_hint"><t t-esc="tile.hint"/> <i class="fa fa-angle-right ms-1"/></div>
+                                    </button>
+                                </t>
+                                <div t-else="" class="o_hd_card o_hd_kpi">
+                                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
+                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                    <div class="o_hd_kpi_hint" t-esc="tile.hint"/>
+                                </div>
+                            </t>
+                        </div>
+
+                        <!-- ============ Stock status ============ -->
+                        <div class="o_hd_card o_hd_flow">
+                            <h3 class="o_hd_card_title">Stock status <span class="o_hd_card_sub">(products)</span></h3>
+                            <div class="o_hd_flow_items">
+                                <t t-foreach="state.data.status" t-as="s" t-key="s.key">
+                                    <div class="o_hi_status" t-att-style="'border-left-color:' + statusStyle[s.key].color">
+                                        <div class="o_hd_flow_value">
+                                            <i t-att-class="'fa ' + statusStyle[s.key].icon + ' me-2'" t-att-style="'color:' + statusStyle[s.key].color" aria-hidden="true"/>
+                                            <t t-esc="qty(s.count)"/>
+                                        </div>
+                                        <div class="o_hd_flow_label" t-esc="s.label"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- ============ Lists: medicines without batch first ============ -->
+                        <div class="o_hd_card o_hi_lists">
+                            <div class="o_hi_tabs" role="tablist">
+                                <t t-foreach="listTabs" t-as="tab" t-key="tab.key">
+                                    <button type="button" role="tab" class="o_hi_tab"
+                                            t-att-class="{ 'o_hi_tab_active': state.listTab === tab.key }"
+                                            t-att-aria-selected="state.listTab === tab.key ? 'true' : 'false'"
+                                            t-on-click="() => this.setListTab(tab.key)">
+                                        <i t-att-class="'fa ' + tab.icon + ' me-1'" aria-hidden="true"/>
+                                        <t t-esc="tab.label"/>
+                                        <span class="o_hi_badge" t-esc="listCount(tab.key)"/>
+                                    </button>
+                                </t>
+                            </div>
+                            <div class="o_hi_list_wrap">
+                                <t t-if="!currentList.rows.length">
+                                    <div class="o_hd_empty"><i class="fa fa-check-circle me-2" style="color:#0ca30c"/>Nothing to report</div>
+                                </t>
+                                <table t-elif="state.listTab === 'no_batch'" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr>
+                                        <th>Medicine</th><th>Type</th><th>Issue</th><th class="text-end">Batches</th>
+                                        <th class="text-end">On hand</th><th class="text-end">Without batch</th><th class="text-end">Waiting delivery</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="currentList.rows" t-as="r" t-key="r.product_id" class="o_hi_row" t-on-click="() => this.openProduct(r)">
+                                            <td t-esc="r.name"/><td t-esc="r.type"/>
+                                            <td><span class="o_hi_pill"><i class="fa fa-exclamation-triangle me-1" aria-hidden="true"/><t t-esc="r.issue"/></span></td>
+                                            <td class="text-end" t-esc="r.batches"/>
+                                            <td class="text-end" t-esc="qty(r.on_hand)"/>
+                                            <td class="text-end" t-esc="qty(r.untracked)"/>
+                                            <td class="text-end" t-esc="qty(r.pending)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table t-elif="state.listTab === 'expiring'" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr>
+                                        <th>Medicine</th><th>Batch</th><th>Expiry</th><th>Status</th>
+                                        <th class="text-end">Qty</th><th class="text-end">Value at cost</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="currentList.rows" t-as="r" t-key="r_index" class="o_hi_row" t-on-click="() => this.openProduct(r)">
+                                            <td t-esc="r.name"/><td t-esc="r.batch"/><td t-esc="r.expiry"/>
+                                            <td>
+                                                <span t-att-class="{ 'o_hi_pill': true, 'o_hi_pill_critical': r.days &lt; 0 }">
+                                                    <i t-att-class="'fa me-1 ' + (r.days &lt; 0 ? 'fa-times-circle' : 'fa-hourglass-half')" aria-hidden="true"/>
+                                                    <t t-esc="days(r.days)"/>
+                                                </span>
+                                            </td>
+                                            <td class="text-end" t-esc="qty(r.qty)"/>
+                                            <td class="text-end" t-esc="money(r.value)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table t-elif="state.listTab === 'negative'" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr><th>Product</th><th>Batch</th><th>Location</th><th class="text-end">Quantity</th></tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="currentList.rows" t-as="r" t-key="r_index" class="o_hi_row" t-on-click="() => this.openProduct(r)">
+                                            <td t-esc="r.name"/><td t-esc="r.batch"/><td t-esc="r.location"/>
+                                            <td class="text-end o_hi_negative" t-esc="qty(r.qty)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table t-else="" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr>
+                                        <th>Product</th><th>Status</th><th class="text-end">On hand</th><th class="text-end">Minimum</th>
+                                        <th class="text-end">Shortage</th><th class="text-end">Waiting delivery</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="currentList.rows" t-as="r" t-key="r.product_id" class="o_hi_row" t-on-click="() => this.openProduct(r)">
+                                            <td t-esc="r.name"/>
+                                            <td>
+                                                <span class="o_hi_pill">
+                                                    <i t-att-class="'fa me-1 ' + statusStyle[r.status].icon" t-att-style="'color:' + statusStyle[r.status].color" aria-hidden="true"/>
+                                                    <t t-esc="r.status === 'out' ? 'Out of stock' : 'Low stock'"/>
+                                                </span>
+                                            </td>
+                                            <td class="text-end" t-esc="qty(r.on_hand)"/>
+                                            <td class="text-end" t-esc="qty(r.minimum)"/>
+                                            <td class="text-end" t-esc="qty(r.shortage)"/>
+                                            <td class="text-end" t-esc="qty(r.pending)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-if="currentList.total > currentList.rows.length" class="o_hd_card_sub mt-2">
+                                Showing <t t-esc="currentList.rows.length"/> of <t t-esc="currentList.total"/>
+                            </div>
+                        </div>
+
+                        <!-- ============ Charts ============ -->
+                        <div class="o_hd_grid">
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_inventory_dashboard.CardHead">
+                                    <t t-set="title">Stock movement</t>
+                                    <t t-set="subtitle" t-value="'Units received and issued ' + bucketLabel"/>
+                                    <t t-set="chartKey" t-value="'movement'"/>
+                                </t>
+                                <div class="o_hd_legend" t-if="hasMovement">
+                                    <t t-foreach="movementLegend" t-as="item" t-key="item.label">
+                                        <span class="o_hd_legend_item">
+                                            <span class="o_hd_swatch" t-att-style="'background:' + item.color"/>
+                                            <t t-esc="item.label"/><strong class="ms-1" t-esc="item.value"/>
+                                        </span>
+                                    </t>
+                                </div>
+                                <t t-if="!hasMovement"><div class="o_hd_empty">No stock movements in this period</div></t>
+                                <t t-elif="state.tables.movement">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Period</th><th class="text-end">Received</th><th class="text-end">Issued</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.movements.labels" t-as="lbl" t-key="lbl_index">
+                                            <td t-esc="lbl"/>
+                                            <td class="text-end" t-esc="qty(state.data.movements.received[lbl_index])"/>
+                                            <td class="text-end" t-esc="qty(state.data.movements.issued[lbl_index])"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.movement" label="'Stock movement ' + bucketLabel" height="260"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_inventory_dashboard.CardHead">
+                                    <t t-set="title">Expiry profile</t>
+                                    <t t-set="subtitle">Batch stock value at cost, by time to expiry</t>
+                                    <t t-set="chartKey" t-value="'expiry'"/>
+                                </t>
+                                <t t-if="!hasExpiry"><div class="o_hd_empty">No batches with stock</div></t>
+                                <t t-elif="state.tables.expiry">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Expiry</th><th class="text-end">Batches</th><th class="text-end">Units</th><th class="text-end">Value</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.expiry_chart" t-as="b" t-key="b.key">
+                                            <td t-esc="b.label"/><td class="text-end" t-esc="b.lots"/>
+                                            <td class="text-end" t-esc="qty(b.qty)"/><td class="text-end" t-esc="money(b.value)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.expiry" label="'Expiry profile'" height="240"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_inventory_dashboard.CardHead">
+                                    <t t-set="title">Stock value</t>
+                                    <t t-set="subtitle" t-value="state.scope === 'medicine' ? 'By medicine type, at cost' : 'By product category, at cost'"/>
+                                    <t t-set="chartKey" t-value="'value'"/>
+                                </t>
+                                <t t-if="!state.data.value_groups.length"><div class="o_hd_empty">No stock on hand</div></t>
+                                <t t-elif="state.tables.value">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Group</th><th class="text-end">Value</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.value_groups" t-as="g" t-key="g_index">
+                                            <td t-esc="g.name"/><td class="text-end" t-esc="money(g.value)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.value" label="'Stock value by group'"
+                                           height="chartHeight(state.data.value_groups.length)"/>
+                            </div>
+
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_inventory_dashboard.CardHead">
+                                    <t t-set="title">Most issued</t>
+                                    <t t-set="subtitle">Units delivered to customers in this period</t>
+                                    <t t-set="chartKey" t-value="'issued'"/>
+                                </t>
+                                <t t-if="!state.data.issued_top.length"><div class="o_hd_empty">No deliveries in this period</div></t>
+                                <t t-elif="state.tables.issued">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Product</th><th class="text-end">Units</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.issued_top" t-as="r" t-key="r_index">
+                                            <td t-esc="r.name"/><td class="text-end" t-esc="qty(r.qty)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.issued" label="'Most issued products'"
+                                           height="chartHeight(state.data.issued_top.length)"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+
+            <!-- ============ Expanded chart (full screen overlay) ============ -->
+            <div t-if="state.expanded and state.data" class="o_hi_overlay" role="dialog" aria-modal="true" t-att-aria-label="expandedTitle">
+                <div class="o_hi_overlay_head">
+                    <h2 class="o_hd_title" t-esc="expandedTitle"/>
+                    <button type="button" class="btn btn-secondary btn-sm" t-on-click="closeExpanded">
+                        <i class="fa fa-compress me-1"/>Close <span class="o_hd_muted ms-1">Esc</span>
+                    </button>
+                </div>
+                <div class="o_hd_legend" t-if="state.expanded === 'movement'">
+                    <t t-foreach="movementLegend" t-as="item" t-key="item.label">
+                        <span class="o_hd_legend_item">
+                            <span class="o_hd_swatch" t-att-style="'background:' + item.color"/>
+                            <t t-esc="item.label"/><strong class="ms-1" t-esc="item.value"/>
+                        </span>
+                    </t>
+                </div>
+                <DashChart t-key="state.expanded" config="charts[state.expanded]" label="expandedTitle" height="expandedHeight"/>
+            </div>
+        </div>
+    </t>
+</templates>
