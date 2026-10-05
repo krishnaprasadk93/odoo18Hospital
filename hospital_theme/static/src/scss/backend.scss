@@ -1,0 +1,60 @@
+// Backend polish on top of the palette in primary_variables.scss.
+$hospital-surface: #ffffff;
+$hospital-page: #f4f7f7;
+$hospital-hairline: rgba(15, 23, 42, 0.08);
+$hospital-tint: #eef6f5;
+
+// ---------------- Navbar
+.o_main_navbar {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    .o_menu_brand { font-weight: 600; letter-spacing: .01em; }
+}
+
+// ---------------- Page background & control panel
+.o_action_manager { background: $hospital-page; }
+.o_control_panel {
+    background: $hospital-surface;
+    border-bottom: 1px solid $hospital-hairline;
+}
+
+// ---------------- Buttons
+.btn { border-radius: 6px; }
+.btn-primary { box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25); }
+
+// ---------------- Form view: sheet as a soft card
+.o_form_view {
+    .o_form_sheet_bg { background: $hospital-page; }
+    .o_form_sheet {
+        border: 1px solid $hospital-hairline;
+        border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+    .o_notebook .nav-tabs .nav-link.active { font-weight: 600; }
+}
+
+// ---------------- List view
+.o_list_renderer {
+    background: $hospital-surface;
+    .o_list_table thead th {
+        background: $hospital-tint;
+        color: #134e4a;
+        font-weight: 600;
+    }
+    .o_list_table tbody tr.o_data_row:hover > td { background: rgba(15, 118, 110, 0.04); }
+}
+
+// ---------------- Kanban cards
+.o_kanban_renderer .o_kanban_record:not(.o_kanban_ghost) {
+    border-radius: 8px;
+    transition: box-shadow .15s, transform .15s;
+    &:hover { box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10); }
+}
+
+// ---------------- Status bar & badges
+.o_statusbar_status .o_arrow_button_current { font-weight: 600; }
+.badge { border-radius: 999px; }
+
+// ---------------- Clinic dashboards: match the theme accent (chips, tabs,
+// links). Chart series keep their own colour-blind-safe palette.
+.o_hd_dashboard { --hd-accent: #0f766e; }
+.o_hd_dashboard .o_hd_chip.o_hd_chip_active { background: rgba(15, 118, 110, 0.08); }

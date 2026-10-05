@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Branded login: a hospital panel beside Odoo's own login card. -->
+    <template id="login_layout_hospital" inherit_id="web.login_layout" name="Hospital Login Layout">
+        <xpath expr="//t[@t-set='body_classname']" position="attributes">
+            <attribute name="t-value">'bg-100 o_hospital_login'</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('container')]" position="replace">
+            <div class="o_hospital_login_wrap">
+                <aside class="o_hospital_login_brand" aria-hidden="false">
+                    <div class="o_hospital_login_mark"><i class="fa fa-heartbeat" aria-hidden="true"/></div>
+                    <h1 class="o_hospital_login_name" t-esc="res_company and res_company.name or 'Clinic'"/>
+                    <p class="o_hospital_login_tagline">Patient registration, consultations, pharmacy and billing in one place.</p>
+                    <ul class="o_hospital_login_points">
+                        <li><i class="fa fa-user-md" aria-hidden="true"/>Reception &amp; doctor consultations</li>
+                        <li><i class="fa fa-medkit" aria-hidden="true"/>Pharmacy, batches &amp; expiry</li>
+                        <li><i class="fa fa-line-chart" aria-hidden="true"/>Dashboards for the clinic</li>
+                    </ul>
+                </aside>
+                <main class="o_hospital_login_main">$0</main>
+            </div>
+        </xpath>
+    </template>
+</odoo>

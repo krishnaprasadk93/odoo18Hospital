@@ -1,0 +1,14 @@
+// Hospital theme palette. Change the brand here; everything else derives from it.
+// All values clear WCAG AA (>= 4.5:1) against white text.
+$hospital-teal: #0f766e;        // primary: buttons, links, active states (5.47:1)
+$hospital-teal-dark: #115e59;   // navbar (7.58:1)
+$hospital-teal-darker: #134e4a; // hover / pressed (9.48:1)
+
+$o-community-color: $hospital-teal;
+$o-enterprise-color: $hospital-teal;
+$o-brand-odoo: $hospital-teal;
+$o-brand-primary: $hospital-teal;
+
+$o-navbar-background: $hospital-teal-dark;
+$o-navbar-border-bottom: 1px solid $hospital-teal-darker;
+$o-navbar-entry-bg--hover: rgba(#ffffff, .10);
