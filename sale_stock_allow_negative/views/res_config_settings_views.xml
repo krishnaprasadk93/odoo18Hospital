@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_sale_allow_negative" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.sale.allow.negative</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <block name="operations_setting_container" position="inside">
+                <setting id="sale_allow_negative_stock"
+                         string="Allow Negative Stock on Sales"
+                         help="Deliveries of confirmed sale orders are Ready to validate even without stock; on-hand quantity goes negative.">
+                    <field name="sale_allow_negative_stock"/>
+                </setting>
+            </block>
+        </field>
+    </record>
+</odoo>
