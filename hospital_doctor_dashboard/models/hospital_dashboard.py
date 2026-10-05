@@ -109,8 +109,14 @@ class HospitalDoctorDashboard(models.AbstractModel):
     # ------------------------------------------------------------------
     # Data collection
     # ------------------------------------------------------------------
+    def _user_tz(self):
+        try:
+            return pytz.timezone(self.env.user.tz or 'UTC')
+        except pytz.UnknownTimeZoneError:
+            return pytz.UTC
+
     def _utc_bounds(self, d_from, d_to):
-        tz = pytz.timezone(self.env.user.tz or 'UTC')
+        tz = self._user_tz()
         start = tz.localize(datetime.combine(d_from, time.min)).astimezone(pytz.UTC)
         end = tz.localize(datetime.combine(d_to + timedelta(days=1), time.min)).astimezone(pytz.UTC)
         return start.replace(tzinfo=None), end.replace(tzinfo=None)
@@ -154,11 +160,11 @@ class HospitalDoctorDashboard(models.AbstractModel):
 
     def _collect(self, d_from, d_to, company_ids, doctor_id, detailed):
         cr = self.env.cr
-        tz_name = self.env.user.tz or 'UTC'
+        tz = self._user_tz()
         start, end = self._utc_bounds(d_from, d_to)
         doctor_clause = "AND t.doctor_id = %(doctor)s" if doctor_id else ""
         params = {
-            'start': start, 'end': end, 'tz': tz_name,
+            'start': start, 'end': end,
             'companies': company_ids, 'doctor': doctor_id,
             'dfrom': d_from, 'dto': d_to,
         }
@@ -166,7 +172,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
         # ---------------- Visits (a visit's hospital is its doctor's company)
         cr.execute(f"""
             SELECT t.id, t.state, t.patient_id, t.doctor_id, t.visit_mode, t.patient_type,
-                   (t.appointment_date AT TIME ZONE 'UTC' AT TIME ZONE %(tz)s) AS local_dt,
+                   t.appointment_date AS utc_dt,
                    p.gender
               FROM hospital_op_ticket t
               JOIN hr_employee e ON e.id = t.doctor_id
@@ -176,6 +182,9 @@ class HospitalDoctorDashboard(models.AbstractModel):
                {doctor_clause}
         """, params)
         tickets = cr.dictfetchall()
+        # Convert in Python: PostgreSQL may not know legacy zone names (e.g. Asia/Calcutta).
+        for t in tickets:
+            t['local_dt'] = pytz.utc.localize(t['utc_dt']).astimezone(tz).replace(tzinfo=None)
         active = [t for t in tickets if t['state'] != 'cancelled']
         patient_ids = {t['patient_id'] for t in active if t['patient_id']}
 
