@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_split_payment_wizard,split.payment.wizard,model_split_payment_wizard,,1,1,1,1
 access_sale_order_return_wizard,sale.order.return.wizard,model_sale_order_return_wizard,base.group_user,1,1,1,1
 access_sale_order_return_wizard_line,sale.order.return.wizard.line,model_sale_order_return_wizard_line,base.group_user,1,1,1,1
+access_sale_missing_batch_wizard,sale.missing.batch.wizard,model_sale_missing_batch_wizard,base.group_user,1,1,1,1
+access_sale_missing_batch_wizard_line,sale.missing.batch.wizard.line,model_sale_missing_batch_wizard_line,base.group_user,1,1,1,1

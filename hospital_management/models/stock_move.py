@@ -1,6 +1,5 @@
 from odoo import models, fields
 from odoo.exceptions import UserError
-from odoo.tools import float_compare
 
 
 class StockMove(models.Model):
@@ -90,8 +89,8 @@ class StockMove(models.Model):
 
         return res
 
-    def _action_assign(self, force_qty=False):
-        res = super()._action_assign(force_qty=force_qty)
+    def _action_assign(self):
+        res = super()._action_assign()
         today = fields.Date.today()
 
         for move in self:
@@ -103,7 +102,6 @@ class StockMove(models.Model):
             # ✅ MANUAL LOT: Force-set lot_id on all move lines created by super()
             if move.sale_line_id and move.sale_line_id.lot_id:
                 move.move_line_ids.write({'lot_id': move.sale_line_id.lot_id.id})
-                move._force_medicine_shortfall(move.sale_line_id.lot_id)
                 continue  # Skip FEFO auto-assignment
 
             # AUTO FEFO assignment for medicines without manual lot
@@ -121,8 +119,6 @@ class StockMove(models.Model):
                 groupby=['lot_id'],
             )
             if not quant_data:
-                # No batch in stock: sell from a batch anyway (negative stock)
-                move._force_medicine_shortfall(move._get_medicine_fallback_lot())
                 continue
 
             lot_data = []
@@ -153,46 +149,4 @@ class StockMove(models.Model):
                 assigned_qty += take_qty
                 if assigned_qty >= required_qty:
                     break
-
-            # Batches don't cover the demand: put the rest on the latest-expiry batch
-            fallback_lot = lot_data[-1]['lot'] if lot_data else move._get_medicine_fallback_lot()
-            move._force_medicine_shortfall(fallback_lot)
         return res
-
-    def _get_medicine_fallback_lot(self):
-        """ Batch to sell from when no batch has stock: the latest unexpired one,
-        else the most recent one. """
-        self.ensure_one()
-        Lot = self.env['stock.lot']
-        domain = [
-            ('product_id', '=', self.product_id.id),
-            '|', ('company_id', '=', False), ('company_id', '=', self.company_id.id),
-        ]
-        return (
-            Lot.search(domain + [('expiration_date', '>=', fields.Date.today())],
-                       order='expiration_date desc', limit=1)
-            or Lot.search(domain, order='id desc', limit=1)
-        )
-
-    def _force_medicine_shortfall(self, lot):
-        """ Reserve the quantity no batch could cover on `lot`, so the delivery is
-        Ready instead of Waiting and the batch goes negative on validation. """
-        self.ensure_one()
-        company = self.company_id
-        if 'sale_allow_negative_stock' in company._fields and not company.sale_allow_negative_stock:
-            return
-        if not lot or self.product_id.tracking == 'none' or self.state in ('done', 'cancel'):
-            return
-        missing = self.product_uom_qty - self.quantity
-        if float_compare(missing, 0, precision_rounding=self.product_uom.rounding) <= 0:
-            return
-        self.env['stock.move.line'].create({
-            'move_id': self.id,
-            'product_id': self.product_id.id,
-            'product_uom_id': self.product_uom.id,
-            'lot_id': lot.id,
-            'quantity': missing,
-            'location_id': self.location_id.id,
-            'location_dest_id': self.location_dest_id.id,
-        })
-        self._recompute_state()

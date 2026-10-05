@@ -5,13 +5,17 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
         <xpath expr="//button[@name='action_confirm']" position="replace">
-            <button name="%(action_split_payment_wizard)d"
-                    type="action"
+            <button name="action_open_split_payment"
+                    type="object"
                     string="Confirm and Pay"
                     class="btn-primary"
                     invisible="invoice_status == 'invoiced'"
                    />
         </xpath>
+
+         <xpath expr="//button[@name='action_confirm']" position="attributes">
+             <attribute name="name">action_confirm_check_batch</attribute>
+         </xpath>
 
          <xpath expr="//button[@name='action_quotation_send']" position="replace"/>
     </field>

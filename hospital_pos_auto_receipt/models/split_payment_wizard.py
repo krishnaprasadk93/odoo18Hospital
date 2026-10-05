@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from odoo.exceptions import UserError
+from odoo.exceptions import RedirectWarning, UserError
 
 
 class SplitPaymentWizard(models.TransientModel):
@@ -70,6 +70,14 @@ class SplitPaymentWizard(models.TransientModel):
         for rec in self:
             rec.balance_amount = (rec.amount_given or 0.0) - (rec.cash_amount or 0.0)
 
+    def _check_batches_exist(self):
+        missing = self.sale_id._get_products_missing_batch()
+        if missing:
+            raise RedirectWarning(
+                "No batch exists for: %s" % ", ".join(missing.mapped('display_name')),
+                self.sale_id._action_missing_batch_wizard(missing, 'pay'),
+                "Create Batch")
+
     def _check_amount_collected_required(self):
         require_amount_collected = self.env['ir.config_parameter'].sudo().get_param(
             'hospital.require_amount_collected_entry', 'False'
@@ -80,6 +88,7 @@ class SplitPaymentWizard(models.TransientModel):
     def action_create_invoice_payment1(self):
         self.ensure_one()
         sale = self.sale_id
+        self._check_batches_exist()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale (triggers your override logic)
@@ -168,6 +177,7 @@ class SplitPaymentWizard(models.TransientModel):
     def action_create_invoice_payment(self):
         self.ensure_one()
         sale = self.sale_id
+        self._check_batches_exist()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale

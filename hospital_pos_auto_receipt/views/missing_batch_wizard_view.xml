@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sale_missing_batch_wizard_form" model="ir.ui.view">
+        <field name="name">sale.missing.batch.wizard.form</field>
+        <field name="model">sale.missing.batch.wizard</field>
+        <field name="arch" type="xml">
+            <form string="No Batch Found">
+                <div class="alert alert-warning" role="alert">
+                    No batch exists for the medicines below, so their stock cannot be
+                    delivered. Enter a Batch No to create the batch and continue.
+                </div>
+                <field name="sale_id" invisible="1"/>
+                <field name="next_step" invisible="1"/>
+                <field name="line_ids">
+                    <list editable="bottom" create="false" delete="false">
+                        <field name="product_id" force_save="1"/>
+                        <field name="lot_name" required="1"/>
+                        <field name="expiration_date"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_create_batches" type="object" invisible="next_step != 'pay'"
+                            string="Create Batch &amp; Continue to Payment" class="btn-primary" data-hotkey="q"/>
+                    <button name="action_create_batches" type="object" invisible="next_step != 'confirm'"
+                            string="Create Batch &amp; Confirm Order" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

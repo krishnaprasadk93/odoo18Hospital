@@ -68,6 +68,63 @@ class SaleOrder(models.Model):
         else:
             raise UserError("Print function (_build_escpos_invoice_at301) not found on Invoice model.")
 
+    def _get_products_missing_batch(self):
+        """ Lot-tracked stockable products on this order that have no batch
+        (stock.lot) at all, so their delivery cannot be auto-validated. """
+        self.ensure_one()
+        products = self.order_line.product_id.filtered(
+            lambda p: p.is_storable and p.tracking != 'none')
+        if not products:
+            return products
+        lots = self.env['stock.lot'].search([
+            ('product_id', 'in', products.ids),
+            ('company_id', 'in', (False, self.company_id.id)),
+        ])
+        return products - lots.product_id
+
+    def _action_split_payment_wizard(self):
+        self.ensure_one()
+        action = self.env['ir.actions.act_window']._for_xml_id(
+            'hospital_pos_auto_receipt.action_split_payment_wizard')
+        action['context'] = {
+            'active_id': self.id,
+            'active_ids': self.ids,
+            'active_model': 'sale.order',
+            'default_sale_id': self.id,
+        }
+        return action
+
+    def _action_missing_batch_wizard(self, missing, next_step):
+        return {
+            'name': 'No Batch Found',
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.missing.batch.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_sale_id': self.id,
+                'default_next_step': next_step,
+                'default_line_ids': [(0, 0, {'product_id': p.id}) for p in missing],
+            },
+        }
+
+    def action_open_split_payment(self):
+        """ "Confirm and Pay": ask for a batch number first for any medicine
+        that has no batch yet, then open the split payment wizard. """
+        self.ensure_one()
+        missing = self._get_products_missing_batch()
+        if missing:
+            return self._action_missing_batch_wizard(missing, 'pay')
+        return self._action_split_payment_wizard()
+
+    def action_confirm_check_batch(self):
+        """ "Confirm": same batch check as "Confirm and Pay", then confirm. """
+        self.ensure_one()
+        missing = self._get_products_missing_batch()
+        if missing:
+            return self._action_missing_batch_wizard(missing, 'confirm')
+        return self.action_confirm()
+
     def action_open_return_wizard(self):
         pass
 
