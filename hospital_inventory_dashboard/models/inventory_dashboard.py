@@ -174,7 +174,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
 
     def _stock_by_product(self, product_ids, location_ids):
         self.env.cr.execute("""
-            SELECT product_id, SUM(quantity)
+            SELECT product_id, COALESCE(SUM(quantity), 0)
               FROM stock_quant
              WHERE product_id = ANY(%s) AND location_id = ANY(%s)
           GROUP BY product_id
@@ -184,7 +184,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
     def _lot_stock(self, product_ids, location_ids):
         """ Per product and lot (None = no lot): quantity and expiry date. """
         self.env.cr.execute("""
-            SELECT q.product_id, q.lot_id, SUM(q.quantity), MAX(l.name), MAX(l.expiration_date)
+            SELECT q.product_id, q.lot_id, COALESCE(SUM(q.quantity), 0), MAX(l.name), MAX(l.expiration_date)
               FROM stock_quant q
          LEFT JOIN stock_lot l ON l.id = q.lot_id
              WHERE q.product_id = ANY(%s) AND q.location_id = ANY(%s)
@@ -198,7 +198,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
     def _pending_out(self, product_ids, location_ids):
         """ Quantity waiting to leave stock (not yet delivered), per product. """
         self.env.cr.execute("""
-            SELECT m.product_id, SUM(m.product_qty)
+            SELECT m.product_id, COALESCE(SUM(COALESCE(m.product_qty, m.product_uom_qty)), 0)
               FROM stock_move m
               JOIN stock_location dest ON dest.id = m.location_dest_id
              WHERE m.product_id = ANY(%s) AND m.location_id = ANY(%s)
@@ -246,7 +246,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
         for product in products:
             qty = stock.get(product.id, 0.0)
             rounding = product.uom_id.rounding
-            minimum = product.minimum_qty if 'minimum_qty' in product._fields else 0.0
+            minimum = (product.minimum_qty or 0.0) if 'minimum_qty' in product._fields else 0.0
             if qty < -rounding / 2:
                 counts['negative'] += 1
             elif abs(qty) < rounding / 2:
@@ -325,14 +325,14 @@ class HospitalInventoryDashboard(models.AbstractModel):
 
     def _negative_rows(self, products, location_ids):
         self.env.cr.execute("""
-            SELECT q.product_id, l.name, loc.complete_name, SUM(q.quantity)
+            SELECT q.product_id, l.name, loc.complete_name, COALESCE(SUM(q.quantity), 0)
               FROM stock_quant q
               JOIN stock_location loc ON loc.id = q.location_id
          LEFT JOIN stock_lot l ON l.id = q.lot_id
              WHERE q.product_id = ANY(%s) AND q.location_id = ANY(%s)
           GROUP BY q.product_id, l.name, loc.complete_name
-            HAVING SUM(q.quantity) < 0
-          ORDER BY SUM(q.quantity)
+            HAVING COALESCE(SUM(q.quantity), 0) < 0
+          ORDER BY 4
         """, [products.ids, location_ids])
         by_id = {p.id: p for p in products}
         return [
@@ -362,7 +362,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
         start = tz.localize(datetime.combine(d_from, time.min)).astimezone(pytz.UTC).replace(tzinfo=None)
         end = tz.localize(datetime.combine(d_to + timedelta(days=1), time.min)).astimezone(pytz.UTC).replace(tzinfo=None)
         self.env.cr.execute("""
-            SELECT m.product_id, m.product_qty,
+            SELECT m.product_id, COALESCE(m.product_qty, m.product_uom_qty, 0),
                    m.date AS utc_date,
                    (m.location_dest_id = ANY(%(locs)s) AND NOT m.location_id = ANY(%(locs)s)) AS is_in,
                    (m.location_id = ANY(%(locs)s) AND NOT m.location_dest_id = ANY(%(locs)s)) AS is_out,

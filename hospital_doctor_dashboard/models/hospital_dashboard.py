@@ -202,7 +202,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
         doctor_rev_clause = "WHERE COALESCE(ct.doctor_id, base.op_ticket_id_doctor) = %(doctor)s" if doctor_id else ""
         cr.execute(f"""
             WITH mv AS (
-                SELECT am.id, am.invoice_date, am.amount_total_signed AS amount,
+                SELECT am.id, am.invoice_date, COALESCE(am.amount_total_signed, 0) AS amount,
                        COALESCE(am.reversed_entry_id, am.id) AS base_id
                   FROM account_move am
                  WHERE am.move_type IN ('out_invoice', 'out_refund')

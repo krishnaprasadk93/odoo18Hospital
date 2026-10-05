@@ -97,3 +97,15 @@ class TestInventoryDashboard(TransactionCase):
         # Browsers may report the legacy name, which PostgreSQL may not know.
         self.pharmacist.tz = 'Asia/Calcutta'
         self.assertIn('movements', self._data())
+
+    def test_null_quantities(self):
+        # Imported / adjusted data can leave NULL quantities and minimums.
+        self.env.cr.execute("""
+            INSERT INTO stock_quant (product_id, location_id, company_id, quantity, reserved_quantity, in_date)
+            VALUES (%s, %s, %s, NULL, 0, now())
+        """, [self.untracked.id, self.stock.id, self.env.company.id])
+        self.env.cr.execute("UPDATE product_template SET minimum_qty = NULL WHERE id = %s",
+                            [self.low.product_tmpl_id.id])
+        self.env.invalidate_all()
+        rows = self._names(self._data(), 'no_batch')
+        self.assertEqual(rows['INV Untracked']['untracked'], 3)
