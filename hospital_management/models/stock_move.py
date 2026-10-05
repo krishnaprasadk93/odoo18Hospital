@@ -89,8 +89,8 @@ class StockMove(models.Model):
 
         return res
 
-    def _action_assign(self):
-        res = super()._action_assign()
+    def _action_assign(self, force_qty=False):
+        res = super()._action_assign(force_qty=force_qty)
         today = fields.Date.today()
 
         for move in self:
