@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_hospital_purchase_dashboard" model="ir.actions.client">
+        <field name="name">Purchase Dashboard</field>
+        <field name="tag">hospital_purchase_dashboard</field>
+    </record>
+
+    <!-- Doctors only (see hospital_doctor_dashboard.menu_hospital_dashboards). -->
+    <menuitem id="menu_hospital_purchase_dashboard"
+              name="Purchase"
+              parent="hospital_doctor_dashboard.menu_hospital_dashboards"
+              action="action_hospital_purchase_dashboard"
+              groups="hospital_management.group_hospital_doctor"
+              sequence="4"/>
+</odoo>

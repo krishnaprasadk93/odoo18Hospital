@@ -5,11 +5,18 @@
         <field name="tag">hospital_doctor_dashboard</field>
     </record>
 
-    <!-- Doctors only: the menu is restricted here and the data endpoint
-         checks the group again server side. -->
+    <!-- All dashboards live under this menu and are for doctors only: the
+         menus are restricted here and every data endpoint checks the group
+         again server side. -->
+    <menuitem id="menu_hospital_dashboards"
+              name="Dashboards"
+              parent="hospital_management.menu_hospital_root"
+              groups="hospital_management.group_hospital_doctor"
+              sequence="5"/>
+
     <menuitem id="menu_hospital_doctor_dashboard"
-              name="Dashboard"
-              parent="hospital_management.menu_doctor_root"
+              name="Clinic"
+              parent="menu_hospital_dashboards"
               action="action_hospital_doctor_dashboard"
               groups="hospital_management.group_hospital_doctor"
               sequence="1"/>
