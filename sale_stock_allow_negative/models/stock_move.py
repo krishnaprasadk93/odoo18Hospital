@@ -25,7 +25,12 @@ class StockMove(models.Model):
         )
 
     def _action_assign(self, force_qty=False):
-        res = super()._action_assign(force_qty=force_qty)
+        # Only forward force_qty when set: some custom overrides of
+        # `_action_assign` don't accept the argument.
+        if force_qty:
+            res = super()._action_assign(force_qty=force_qty)
+        else:
+            res = super()._action_assign()
         if not force_qty and not self.env.context.get('skip_force_negative_availability'):
             for move in self.filtered(lambda m: m._should_force_negative_availability()):
                 # Setting the quantity creates the missing move lines from the
