@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Title row with refresh and full screen. Expects `title`. -->
+    <t t-name="hospital_doctor_dashboard.BaseHeader">
+        <div class="o_hd_header">
+            <div>
+                <h1 class="o_hd_title" t-esc="title"/>
+                <div class="o_hd_subtitle" t-if="state.data">
+                    <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
+                    <span class="o_hd_muted"> · compared with <t t-esc="state.data.period.prev_from"/> – <t t-esc="state.data.period.prev_to"/></span>
+                    <span t-if="state.lastUpdated" class="o_hd_muted"> · updated <t t-esc="state.lastUpdated"/></span>
+                    <span t-if="state.fullscreen" class="o_hd_muted"> · refreshes every 5 min</span>
+                </div>
+            </div>
+            <div class="o_hd_header_actions">
+                <span t-if="state.loading" class="o_hd_muted"><i class="fa fa-circle-o-notch fa-spin me-1"/>Loading…</span>
+                <button type="button" class="btn btn-secondary btn-sm" t-on-click="() => this.load()" title="Refresh" aria-label="Refresh">
+                    <i class="fa fa-refresh"/>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" t-on-click="toggleFullscreen">
+                    <t t-if="state.fullscreen"><i class="fa fa-compress me-1"/>Exit full screen</t>
+                    <t t-else=""><i class="fa fa-arrows-alt me-1"/>Full screen</t>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <!-- Date presets and custom range (inside the filter row). -->
+    <t t-name="hospital_doctor_dashboard.BaseDates">
+        <div class="o_hd_presets" role="group" aria-label="Date range">
+            <t t-foreach="presets" t-as="p" t-key="p.key">
+                <button type="button" class="o_hd_chip"
+                        t-att-class="{ 'o_hd_chip_active': state.preset === p.key }"
+                        t-att-aria-pressed="state.preset === p.key ? 'true' : 'false'"
+                        t-on-click="() => this.onPreset(p.key)">
+                    <i t-if="state.preset === p.key" class="fa fa-check me-1"/>
+                    <t t-esc="p.label"/>
+                </button>
+            </t>
+        </div>
+        <div class="o_hd_dates">
+            <label class="o_hd_field">
+                <span>From</span>
+                <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom"
+                       t-att-max="state.dateTo" t-on-change="(ev) => this.onDateChange('dateFrom', ev)"/>
+            </label>
+            <label class="o_hd_field">
+                <span>To</span>
+                <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo"
+                       t-att-min="state.dateFrom" t-on-change="(ev) => this.onDateChange('dateTo', ev)"/>
+            </label>
+        </div>
+    </t>
+
+    <!-- KPI tile list. Expects `tiles`: {key, label, value, delta?, hint?, alert?, onClick?} -->
+    <t t-name="hospital_doctor_dashboard.BaseKpis">
+        <div class="o_hd_kpis o_hd_kpis4">
+            <t t-foreach="tiles" t-as="tile" t-key="tile.key">
+                <t t-if="tile.onClick">
+                    <button type="button" t-att-class="{ 'o_hd_card o_hd_kpi o_hd_kpi_link': true, 'o_hd_kpi_alert': tile.alert }"
+                            t-on-click="tile.onClick">
+                        <div class="o_hd_kpi_label">
+                            <i t-if="tile.alert" class="fa fa-exclamation-circle me-1 o_hd_alert_icon" aria-hidden="true"/>
+                            <t t-esc="tile.label"/>
+                        </div>
+                        <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                        <div class="o_hd_kpi_hint"><t t-esc="tile.hint"/> <i class="fa fa-angle-right ms-1"/></div>
+                    </button>
+                </t>
+                <div t-else="" t-att-class="{ 'o_hd_card o_hd_kpi': true, 'o_hd_kpi_alert': tile.alert }">
+                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
+                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                    <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
+                        <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
+                        <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
+                        <t t-esc="tile.delta.text"/>
+                    </div>
+                    <div t-if="tile.hint" class="o_hd_kpi_hint" t-esc="tile.hint"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- Card header with table toggle and expand. Expects `title`, `subtitle`, `chartKey`. -->
+    <t t-name="hospital_doctor_dashboard.BaseCardHead">
+        <div class="o_hd_card_head">
+            <div>
+                <h3 class="o_hd_card_title" t-esc="title"/>
+                <div t-if="subtitle" class="o_hd_card_sub" t-esc="subtitle"/>
+            </div>
+            <div class="o_hd_card_actions">
+                <button type="button" class="btn btn-link btn-sm o_hd_toggle" t-on-click="() => this.toggleTable(chartKey)">
+                    <t t-if="state.tables[chartKey]"><i class="fa fa-bar-chart me-1"/>Chart</t>
+                    <t t-else=""><i class="fa fa-table me-1"/>Table</t>
+                </button>
+                <button type="button" class="btn btn-link btn-sm o_hd_toggle" title="Expand chart"
+                        aria-label="Expand chart" t-on-click="() => this.expand(chartKey)">
+                    <i class="fa fa-expand"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+    <!-- Full-screen chart overlay. -->
+    <t t-name="hospital_doctor_dashboard.BaseExpanded">
+        <div t-if="state.expanded and state.data" class="o_hd_overlay" role="dialog" aria-modal="true" t-att-aria-label="expandedTitle">
+            <div class="o_hd_overlay_head">
+                <h2 class="o_hd_title" t-esc="expandedTitle"/>
+                <button type="button" class="btn btn-secondary btn-sm" t-on-click="closeExpanded">
+                    <i class="fa fa-compress me-1"/>Close <span class="o_hd_muted ms-1">Esc</span>
+                </button>
+            </div>
+            <DashChart t-key="state.expanded" config="charts[state.expanded]" label="expandedTitle" height="expandedHeight"/>
+        </div>
+    </t>
+
+    <!-- Simple two-column ranked table. Expects `rows`, `nameLabel`, `valueLabel`, `valueKey`, `isMoney`. -->
+    <t t-name="hospital_doctor_dashboard.BaseRankTable">
+        <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+            <thead><tr><th t-esc="nameLabel"/><th class="text-end" t-esc="valueLabel"/></tr></thead>
+            <tbody><tr t-foreach="rows" t-as="r" t-key="r_index">
+                <td t-esc="r.name"/>
+                <td class="text-end" t-esc="isMoney ? money(r[valueKey]) : qty(r[valueKey])"/>
+            </tr></tbody>
+        </table></div>
+    </t>
+</templates>

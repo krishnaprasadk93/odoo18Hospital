@@ -13,12 +13,12 @@ class TestInventoryDashboard(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.Dashboard = cls.env['hospital.inventory.dashboard']
+        cls.viewer = new_test_user(
+            cls.env, login='inv_doctor', tz='UTC',
+            groups='base.group_user,hospital_management.group_hospital_doctor')
         cls.pharmacist = new_test_user(
             cls.env, login='inv_pharmacist', tz='UTC',
             groups='base.group_user,hospital_management.group_hospital_pharmacist')
-        cls.doctor = new_test_user(
-            cls.env, login='inv_doctor', tz='UTC',
-            groups='base.group_user,hospital_management.group_hospital_doctor')
         cls.warehouse = cls.env['stock.warehouse'].search([('company_id', '=', cls.env.company.id)], limit=1)
         cls.stock = cls.warehouse.lot_stock_id
         Product = cls.env['product.product']
@@ -51,7 +51,7 @@ class TestInventoryDashboard(TransactionCase):
         cls.today = fields.Date.to_string(fields.Date.today())
 
     def _data(self, user=None):
-        return self.Dashboard.with_user(user or self.pharmacist).get_dashboard_data(
+        return self.Dashboard.with_user(user or self.viewer).get_dashboard_data(
             self.today, self.today, self.warehouse.id, 'medicine')
 
     @staticmethod
@@ -60,10 +60,10 @@ class TestInventoryDashboard(TransactionCase):
 
     def test_access(self):
         with self.assertRaises(AccessError):
-            self.Dashboard.with_user(self.doctor).get_filter_options()
+            self.Dashboard.with_user(self.pharmacist).get_filter_options()
         with self.assertRaises(AccessError):
-            self._data(self.doctor)
-        options = self.Dashboard.with_user(self.pharmacist).get_filter_options()
+            self._data(self.pharmacist)
+        options = self.Dashboard.with_user(self.viewer).get_filter_options()
         self.assertIn(self.warehouse.id, [w['id'] for w in options['warehouses']])
 
     def test_medicines_without_batch(self):
@@ -95,7 +95,7 @@ class TestInventoryDashboard(TransactionCase):
 
     def test_legacy_timezone_name(self):
         # Browsers may report the legacy name, which PostgreSQL may not know.
-        self.pharmacist.tz = 'Asia/Calcutta'
+        self.viewer.tz = 'Asia/Calcutta'
         self.assertIn('movements', self._data())
 
     def test_null_quantities(self):

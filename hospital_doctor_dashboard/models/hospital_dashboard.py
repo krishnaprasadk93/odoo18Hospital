@@ -1,12 +1,11 @@
 from collections import Counter, defaultdict
-from datetime import datetime, time, timedelta
+from datetime import timedelta
 
 import pytz
 
 from odoo import _, api, fields, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import UserError
 
-DOCTOR_GROUP = 'hospital_management.group_hospital_doctor'
 MAX_RANGE_DAYS = 731
 TOP_DOCTORS = 8
 TOP_MEDICINES = 10
@@ -26,23 +25,8 @@ TYPE_LABELS = {'outpatient': 'Out Patient', 'inpatient': 'In Patient'}
 
 class HospitalDoctorDashboard(models.AbstractModel):
     _name = 'hospital.doctor.dashboard'
+    _inherit = 'hospital.dashboard.mixin'
     _description = 'Clinic Dashboard (Doctors)'
-
-    # ------------------------------------------------------------------
-    # Access
-    # ------------------------------------------------------------------
-    def _check_doctor_access(self):
-        if not self.env.user.has_group(DOCTOR_GROUP):
-            raise AccessError(_("Only doctors can view the clinic dashboard."))
-
-    def _allowed_company_ids(self, company_ids=None):
-        """ Requested hospitals (companies), restricted to the user's own. """
-        allowed = self.env.user.company_ids.ids
-        if company_ids:
-            ids = [int(c) for c in company_ids if int(c) in allowed]
-            if ids:
-                return ids
-        return [c for c in self.env.companies.ids if c in allowed] or [self.env.company.id]
 
     # ------------------------------------------------------------------
     # Public RPC
@@ -109,54 +93,6 @@ class HospitalDoctorDashboard(models.AbstractModel):
     # ------------------------------------------------------------------
     # Data collection
     # ------------------------------------------------------------------
-    def _user_tz(self):
-        try:
-            return pytz.timezone(self.env.user.tz or 'UTC')
-        except pytz.UnknownTimeZoneError:
-            return pytz.UTC
-
-    def _utc_bounds(self, d_from, d_to):
-        tz = self._user_tz()
-        start = tz.localize(datetime.combine(d_from, time.min)).astimezone(pytz.UTC)
-        end = tz.localize(datetime.combine(d_to + timedelta(days=1), time.min)).astimezone(pytz.UTC)
-        return start.replace(tzinfo=None), end.replace(tzinfo=None)
-
-    @staticmethod
-    def _bucket_kind(d_from, d_to):
-        span = (d_to - d_from).days + 1
-        if span <= 62:
-            return 'day'
-        if span <= 182:
-            return 'week'
-        return 'month'
-
-    @staticmethod
-    def _bucket_start(day, kind):
-        if kind == 'week':
-            return day - timedelta(days=day.weekday())
-        if kind == 'month':
-            return day.replace(day=1)
-        return day
-
-    def _buckets(self, d_from, d_to, kind):
-        keys, day = [], self._bucket_start(d_from, kind)
-        while day <= d_to:
-            keys.append(day)
-            if kind == 'day':
-                day += timedelta(days=1)
-            elif kind == 'week':
-                day += timedelta(days=7)
-            else:
-                day = (day.replace(day=28) + timedelta(days=4)).replace(day=1)
-        return keys
-
-    @staticmethod
-    def _bucket_label(day, kind):
-        if kind == 'month':
-            return day.strftime('%b %Y')
-        if kind == 'week':
-            return 'Wk %s' % day.strftime('%d %b')
-        return day.strftime('%d %b')
 
     def _collect(self, d_from, d_to, company_ids, doctor_id, detailed):
         cr = self.env.cr

@@ -5,12 +5,13 @@
         <field name="tag">hospital_inventory_dashboard</field>
     </record>
 
-    <!-- Pharmacists and Inventory administrators only: the menu is restricted
-         here and the data endpoint checks the groups again server side. -->
+    <!-- Doctors only (see hospital_doctor_dashboard.menu_hospital_dashboards).
+         The "-" entries remove the groups an earlier version granted, since an
+         upgrade otherwise only adds groups to an existing menu. -->
     <menuitem id="menu_hospital_inventory_dashboard"
-              name="Inventory Dashboard"
-              parent="hospital_management.menu_pharmacy_root"
+              name="Inventory"
+              parent="hospital_doctor_dashboard.menu_hospital_dashboards"
               action="action_hospital_inventory_dashboard"
-              groups="hospital_management.group_hospital_pharmacist,stock.group_stock_manager"
-              sequence="1"/>
+              groups="-hospital_management.group_hospital_pharmacist,-stock.group_stock_manager,hospital_management.group_hospital_doctor"
+              sequence="2"/>
 </odoo>

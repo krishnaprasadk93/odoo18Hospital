@@ -7,8 +7,7 @@ from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
 ACCESS_GROUPS = (
-    'hospital_management.group_hospital_pharmacist',
-    'stock.group_stock_manager',
+    'hospital_management.group_hospital_doctor',
 )
 MAX_RANGE_DAYS = 731
 LIST_LIMIT = 100
@@ -33,7 +32,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
     # ------------------------------------------------------------------
     def _check_access(self):
         if not any(self.env.user.has_group(g) for g in ACCESS_GROUPS):
-            raise AccessError(_("Only pharmacists and inventory administrators can view the inventory dashboard."))
+            raise AccessError(_("Only doctors can view the inventory dashboard."))
 
     def _company_ids(self):
         allowed = self.env.user.company_ids.ids
