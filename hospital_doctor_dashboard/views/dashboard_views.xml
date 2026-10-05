@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_hospital_doctor_dashboard" model="ir.actions.client">
+        <field name="name">Clinic Dashboard</field>
+        <field name="tag">hospital_doctor_dashboard</field>
+    </record>
+
+    <!-- Doctors only: the menu is restricted here and the data endpoint
+         checks the group again server side. -->
+    <menuitem id="menu_hospital_doctor_dashboard"
+              name="Dashboard"
+              parent="hospital_management.menu_doctor_root"
+              action="action_hospital_doctor_dashboard"
+              groups="hospital_management.group_hospital_doctor"
+              sequence="1"/>
+</odoo>
