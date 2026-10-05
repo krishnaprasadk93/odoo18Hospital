@@ -1,0 +1,186 @@
+.o_hd_dashboard {
+    --hd-page: #f9f9f7;
+    --hd-surface: #fcfcfb;
+    --hd-ink: #0b0b0b;
+    --hd-ink-2: #52514e;
+    --hd-muted: #898781;
+    --hd-hairline: rgba(11, 11, 11, 0.10);
+    --hd-accent: #2a78d6;
+    --hd-good: #006300;
+    --hd-critical: #d03b3b;
+
+    height: 100%;
+    background: var(--hd-page);
+    color: var(--hd-ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    .o_hd_scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 20px 24px 40px;
+    }
+
+    .o_hd_muted { color: var(--hd-muted); }
+
+    // ---------------- Header & filters
+    .o_hd_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+    .o_hd_title { font-size: 22px; font-weight: 600; margin: 0; }
+    .o_hd_subtitle { color: var(--hd-ink-2); font-size: 13px; margin-top: 2px; }
+
+    .o_hd_filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px 20px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        background: var(--hd-surface);
+        border: 1px solid var(--hd-hairline);
+        border-radius: 10px;
+    }
+    .o_hd_presets, .o_hd_hospitals { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .o_hd_dates { display: flex; flex-wrap: wrap; gap: 10px; }
+    .o_hd_field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 0;
+        font-size: 12px;
+        color: var(--hd-ink-2);
+        select { min-width: 180px; }
+    }
+    .o_hd_chip {
+        border: 1px solid var(--hd-hairline);
+        background: transparent;
+        color: var(--hd-ink-2);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 13px;
+        line-height: 1.4;
+        &:hover { background: rgba(11, 11, 11, 0.04); }
+        &.o_hd_chip_active {
+            color: var(--hd-ink);
+            font-weight: 600;
+            border-color: var(--hd-accent);
+            background: rgba(42, 120, 214, 0.08);
+        }
+    }
+
+    .o_hd_body { transition: opacity 0.15s; }
+    .o_hd_dim { opacity: 0.55; pointer-events: none; }
+
+    // ---------------- Cards
+    .o_hd_card {
+        background: var(--hd-surface);
+        border: 1px solid var(--hd-hairline);
+        border-radius: 10px;
+        padding: 14px 16px;
+        min-width: 0;
+    }
+    .o_hd_card_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .o_hd_card_title { font-size: 15px; font-weight: 600; margin: 0; }
+    .o_hd_card_sub { font-size: 12px; color: var(--hd-muted); margin-top: 2px; }
+    .o_hd_toggle { color: var(--hd-ink-2); padding: 0 4px; white-space: nowrap; }
+    .o_hd_empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 160px;
+        color: var(--hd-muted);
+        font-size: 13px;
+    }
+    .o_hd_canvas { position: relative; width: 100%; }
+
+    // ---------------- KPI tiles
+    .o_hd_kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .o_hd_kpi_label { font-size: 13px; color: var(--hd-ink-2); }
+    .o_hd_kpi_value { font-size: 26px; font-weight: 600; margin: 4px 0 2px; line-height: 1.2; }
+    .o_hd_kpi_hint { font-size: 12px; color: var(--hd-muted); }
+    .o_hd_delta { font-size: 12px; color: var(--hd-ink-2); }
+    .o_hd_delta_up { color: var(--hd-good); }
+    .o_hd_delta_down { color: var(--hd-critical); }
+
+    // ---------------- Patient flow
+    .o_hd_flow { margin-bottom: 12px; }
+    .o_hd_flow_items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .o_hd_flow_item {
+        border-left: 2px solid var(--hd-accent);
+        padding: 2px 10px;
+        &.o_hd_flow_cancel { border-left-color: #c3c2b7; }
+    }
+    .o_hd_flow_value { font-size: 20px; font-weight: 600; }
+    .o_hd_flow_label { font-size: 12px; color: var(--hd-ink-2); }
+
+    // ---------------- Grid of chart cards
+    .o_hd_grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        .o_hd_span2 { grid-column: span 2; }
+    }
+    @media (max-width: 991.98px) {
+        .o_hd_scroll { padding: 16px; }
+        .o_hd_grid { grid-template-columns: minmax(0, 1fr); .o_hd_span2 { grid-column: span 1; } }
+        .o_hd_header { flex-direction: column; align-items: flex-start; }
+    }
+
+    // ---------------- Legend & patient mix
+    .o_hd_legend, .o_hd_mix_labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+        font-size: 12px;
+        color: var(--hd-ink-2);
+        margin-bottom: 8px;
+        strong { color: var(--hd-ink); font-weight: 600; }
+    }
+    .o_hd_legend_item { display: inline-flex; align-items: center; gap: 6px; }
+    .o_hd_swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+
+    .o_hd_mix { margin-top: 12px; }
+    .o_hd_mix_title { font-size: 12px; color: var(--hd-muted); margin-bottom: 4px; }
+    .o_hd_mix_bar {
+        display: flex;
+        gap: 2px;
+        height: 12px;
+        margin-bottom: 6px;
+        .o_hd_mix_seg {
+            flex-basis: 0;
+            min-width: 4px;
+            &:first-child { border-radius: 4px 0 0 4px; }
+            &:last-child { border-radius: 0 4px 4px 0; }
+            &:only-child { border-radius: 4px; }
+        }
+    }
+
+    // ---------------- Table view
+    .o_hd_table_wrap { max-height: 280px; overflow-y: auto; }
+    .o_hd_table {
+        font-size: 13px;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+        th { color: var(--hd-ink-2); font-weight: 600; position: sticky; top: 0; background: var(--hd-surface); }
+    }
+}

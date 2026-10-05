@@ -1,0 +1,62 @@
+from datetime import timedelta
+
+from odoo import fields
+from odoo.exceptions import AccessError
+from odoo.tests import tagged
+from odoo.tests.common import TransactionCase, new_test_user
+
+
+@tagged('post_install', '-at_install')
+class TestDoctorDashboard(TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Dashboard = cls.env['hospital.doctor.dashboard']
+        cls.doctor_user = new_test_user(
+            cls.env, login='dash_doctor', tz='UTC',
+            groups='base.group_user,hospital_management.group_hospital_doctor')
+        cls.reception_user = new_test_user(
+            cls.env, login='dash_reception', tz='UTC',
+            groups='base.group_user,hospital_management.group_hospital_receptionist')
+        cls.doctor = cls.env['hr.employee'].create({'name': 'Dr Dash', 'user_id': cls.doctor_user.id})
+        partner = cls.env['res.partner'].create({'name': 'Dash Patient', 'phone': '9000000001'})
+        cls.patient = cls.env['hospital.patient'].create({'partner_id': partner.id, 'gender': 'female'})
+        now = fields.Datetime.now()
+        Ticket = cls.env['hospital.op.ticket']
+        cls.tickets = Ticket.create([
+            {'patient_id': cls.patient.id, 'doctor_id': cls.doctor.id, 'appointment_date': now},
+            {'patient_id': cls.patient.id, 'doctor_id': cls.doctor.id, 'appointment_date': now},
+            {'patient_id': cls.patient.id, 'doctor_id': cls.doctor.id, 'appointment_date': now,
+             'state': 'cancelled'},
+        ])
+        cls.today = fields.Date.to_string(fields.Date.today())
+
+    def test_only_doctors_can_view(self):
+        with self.assertRaises(AccessError):
+            self.Dashboard.with_user(self.reception_user).get_filter_options()
+        with self.assertRaises(AccessError):
+            self.Dashboard.with_user(self.reception_user).get_dashboard_data(self.today, self.today)
+        options = self.Dashboard.with_user(self.doctor_user).get_filter_options()
+        self.assertEqual(options['my_doctor_id'], self.doctor.id)
+
+    def test_visit_counts(self):
+        data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
+            self.today, self.today, doctor_id=self.doctor.id)
+        kpis = data['kpis']
+        self.assertEqual(kpis['visits'], 2)
+        self.assertEqual(kpis['cancelled'], 1)
+        self.assertEqual(kpis['patients'], 1)
+        self.assertEqual(kpis['new_patients'], 1)
+        self.assertEqual(sum(data['visits_series']['values']), 2)
+        self.assertEqual(data['doctors'], [{'name': 'Dr Dash', 'visits': 2}])
+        gender = {g['label']: g['count'] for g in data['mix']['gender']}
+        self.assertEqual(gender['Female'], 2)
+
+    def test_previous_period_and_buckets(self):
+        start = fields.Date.today() - timedelta(days=99)
+        data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
+            fields.Date.to_string(start), self.today, doctor_id=self.doctor.id)
+        self.assertEqual(data['period']['bucket'], 'week')
+        self.assertEqual(data['kpis']['visits_prev'], 0)
+        self.assertEqual(sum(data['visits_series']['values']), 2)

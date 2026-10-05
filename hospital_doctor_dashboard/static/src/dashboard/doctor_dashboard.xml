@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hospital_doctor_dashboard.DashChart">
+        <div class="o_hd_canvas" t-att-style="'height: ' + (props.height or 240) + 'px'">
+            <canvas t-ref="canvas" role="img" t-att-aria-label="props.label"/>
+        </div>
+    </t>
+
+    <!-- Card header with chart / table toggle -->
+    <t t-name="hospital_doctor_dashboard.CardHead">
+        <div class="o_hd_card_head">
+            <div>
+                <h3 class="o_hd_card_title" t-esc="title"/>
+                <div t-if="subtitle" class="o_hd_card_sub" t-esc="subtitle"/>
+            </div>
+            <button t-if="tableKey" type="button" class="btn btn-link btn-sm o_hd_toggle"
+                    t-on-click="() => this.toggleTable(tableKey)">
+                <t t-if="state.tables[tableKey]"><i class="fa fa-bar-chart me-1"/>Chart</t>
+                <t t-else=""><i class="fa fa-table me-1"/>Table</t>
+            </button>
+        </div>
+    </t>
+
+    <t t-name="hospital_doctor_dashboard.Dashboard">
+        <div class="o_action o_hd_dashboard">
+            <div class="o_hd_scroll">
+
+                <!-- ============ Header & filters (one row above the charts) ============ -->
+                <div class="o_hd_header">
+                    <div>
+                        <h1 class="o_hd_title">Clinic Dashboard</h1>
+                        <div class="o_hd_subtitle" t-if="state.data">
+                            <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
+                            <span class="o_hd_muted"> · compared with <t t-esc="state.data.period.prev_from"/> – <t t-esc="state.data.period.prev_to"/></span>
+                        </div>
+                    </div>
+                    <span t-if="state.loading" class="o_hd_muted"><i class="fa fa-circle-o-notch fa-spin me-1"/>Loading…</span>
+                </div>
+
+                <div class="o_hd_filters">
+                    <div class="o_hd_presets" role="group" aria-label="Date range">
+                        <t t-foreach="presets" t-as="p" t-key="p.key">
+                            <button type="button" class="o_hd_chip"
+                                    t-att-class="{ 'o_hd_chip_active': state.preset === p.key }"
+                                    t-att-aria-pressed="state.preset === p.key ? 'true' : 'false'"
+                                    t-on-click="() => this.onPreset(p.key)">
+                                <i t-if="state.preset === p.key" class="fa fa-check me-1"/>
+                                <t t-esc="p.label"/>
+                            </button>
+                        </t>
+                    </div>
+                    <div class="o_hd_dates">
+                        <label class="o_hd_field">
+                            <span>From</span>
+                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom"
+                                   t-att-max="state.dateTo" t-on-change="(ev) => this.onDateChange('dateFrom', ev)"/>
+                        </label>
+                        <label class="o_hd_field">
+                            <span>To</span>
+                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo"
+                                   t-att-min="state.dateFrom" t-on-change="(ev) => this.onDateChange('dateTo', ev)"/>
+                        </label>
+                        <label class="o_hd_field">
+                            <span>Doctor</span>
+                            <select class="form-select form-select-sm" t-on-change="onDoctorChange">
+                                <option value="" t-att-selected="!state.doctorId">All doctors</option>
+                                <t t-foreach="visibleDoctors" t-as="doc" t-key="doc.id">
+                                    <option t-att-value="doc.id" t-att-selected="isDoctorSelected(doc.id)">
+                                        <t t-esc="doc.name"/><t t-if="doc.id === state.options.my_doctor_id"> (me)</t>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
+                    </div>
+                    <div t-if="state.options.companies.length > 1" class="o_hd_hospitals" role="group" aria-label="Hospitals">
+                        <span class="o_hd_muted me-1">Hospitals</span>
+                        <t t-foreach="state.options.companies" t-as="c" t-key="c.id">
+                            <button type="button" class="o_hd_chip"
+                                    t-att-class="{ 'o_hd_chip_active': state.companyIds.includes(c.id) }"
+                                    t-att-aria-pressed="state.companyIds.includes(c.id) ? 'true' : 'false'"
+                                    t-on-click="() => this.toggleCompany(c.id)">
+                                <i t-if="state.companyIds.includes(c.id)" class="fa fa-check me-1"/>
+                                <t t-esc="c.name"/>
+                            </button>
+                        </t>
+                    </div>
+                </div>
+
+                <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>
+
+                <t t-if="state.data">
+                    <div t-att-class="{ 'o_hd_body': true, 'o_hd_dim': state.loading }">
+
+                        <!-- ============ KPI tiles ============ -->
+                        <div class="o_hd_kpis">
+                            <t t-foreach="kpiTiles" t-as="tile" t-key="tile.key">
+                                <div class="o_hd_card o_hd_kpi">
+                                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
+                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                    <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
+                                        <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
+                                        <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
+                                        <t t-esc="tile.delta.text"/>
+                                    </div>
+                                    <div t-if="tile.hint" class="o_hd_kpi_hint" t-esc="tile.hint"/>
+                                </div>
+                            </t>
+                        </div>
+
+                        <!-- ============ Patient flow ============ -->
+                        <div class="o_hd_card o_hd_flow">
+                            <h3 class="o_hd_card_title">Patient flow</h3>
+                            <div class="o_hd_flow_items">
+                                <t t-foreach="state.data.status" t-as="s" t-key="s.key">
+                                    <div t-att-class="{ 'o_hd_flow_item': true, 'o_hd_flow_cancel': s.key === 'cancelled' }">
+                                        <div class="o_hd_flow_value" t-esc="count(s.count)"/>
+                                        <div class="o_hd_flow_label" t-esc="s.label"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- ============ Charts ============ -->
+                        <div class="o_hd_grid">
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Visits</t>
+                                    <t t-set="subtitle" t-value="'Non-cancelled visits ' + bucketLabel"/>
+                                    <t t-set="tableKey" t-value="'visits'"/>
+                                </t>
+                                <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
+                                <t t-elif="state.tables.visits">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Period</th><th class="text-end">Visits</th></tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="state.data.visits_series.labels" t-as="lbl" t-key="lbl_index">
+                                                <td t-esc="lbl"/><td class="text-end" t-esc="count(state.data.visits_series.values[lbl_index])"/>
+                                            </tr>
+                                        </tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.visits" label="'Visits ' + bucketLabel"/>
+                            </div>
+
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Revenue</t>
+                                    <t t-set="subtitle" t-value="'Posted invoices ' + bucketLabel + (state.doctorId ? ' · OTC sales excluded for a single doctor' : '')"/>
+                                    <t t-set="tableKey" t-value="'revenue'"/>
+                                </t>
+                                <div class="o_hd_legend" t-if="hasRevenue">
+                                    <t t-foreach="revenueLegend" t-as="item" t-key="item.label">
+                                        <span class="o_hd_legend_item">
+                                            <span class="o_hd_swatch" t-att-style="'background:' + item.color"/>
+                                            <t t-esc="item.label"/>
+                                            <strong class="ms-1" t-esc="item.value"/>
+                                        </span>
+                                    </t>
+                                </div>
+                                <t t-if="!hasRevenue"><div class="o_hd_empty">No posted invoices in this period</div></t>
+                                <t t-elif="state.tables.revenue">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Period</th><th class="text-end">Consultation</th><th class="text-end">Pharmacy</th><th class="text-end">Other</th></tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="state.data.revenue_series.labels" t-as="lbl" t-key="lbl_index">
+                                                <td t-esc="lbl"/>
+                                                <td class="text-end" t-esc="money(state.data.revenue_series.consultation[lbl_index])"/>
+                                                <td class="text-end" t-esc="money(state.data.revenue_series.pharmacy[lbl_index])"/>
+                                                <td class="text-end" t-esc="money(state.data.revenue_series.other[lbl_index])"/>
+                                            </tr>
+                                        </tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.revenue" label="'Revenue ' + bucketLabel"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Visits by doctor</t>
+                                    <t t-set="tableKey" t-value="'doctors'"/>
+                                </t>
+                                <t t-if="!state.data.doctors.length"><div class="o_hd_empty">No visits in this period</div></t>
+                                <t t-elif="state.tables.doctors">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Doctor</th><th class="text-end">Visits</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.doctors" t-as="d" t-key="d_index">
+                                            <td t-esc="d.name"/><td class="text-end" t-esc="count(d.visits)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.doctors" label="'Visits by doctor'"
+                                           height="chartHeight(state.data.doctors.length)"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Most prescribed medicines</t>
+                                    <t t-set="subtitle">Number of prescriptions</t>
+                                    <t t-set="tableKey" t-value="'medicines'"/>
+                                </t>
+                                <t t-if="!state.data.medicines.length"><div class="o_hd_empty">No prescriptions in this period</div></t>
+                                <t t-elif="state.tables.medicines">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Medicine</th><th class="text-end">Prescriptions</th><th class="text-end">Total qty</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.medicines" t-as="m" t-key="m_index">
+                                            <td t-esc="m.name"/><td class="text-end" t-esc="count(m.count)"/><td class="text-end" t-esc="count(m.qty)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.medicines" label="'Most prescribed medicines'"
+                                           height="chartHeight(state.data.medicines.length)"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Busiest hours</t>
+                                    <t t-set="subtitle">Visits by appointment hour</t>
+                                    <t t-set="tableKey" t-value="'hours'"/>
+                                </t>
+                                <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
+                                <t t-elif="state.tables.hours">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Hour</th><th class="text-end">Visits</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.hours_series.labels" t-as="lbl" t-key="lbl_index">
+                                            <td t-esc="lbl"/><td class="text-end" t-esc="count(state.data.hours_series.values[lbl_index])"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.hours" label="'Visits by appointment hour'" height="200"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <h3 class="o_hd_card_title">Patient mix</h3>
+                                <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
+                                <t t-else="">
+                                    <t t-foreach="[['Gender', state.data.mix.gender], ['Visit mode', state.data.mix.mode], ['Patient type', state.data.mix.type]]"
+                                       t-as="group" t-key="group[0]">
+                                        <div class="o_hd_mix">
+                                            <div class="o_hd_mix_title" t-esc="group[0]"/>
+                                            <div class="o_hd_mix_bar" role="img" t-att-aria-label="group[0]">
+                                                <t t-foreach="mixRows(group[1])" t-as="row" t-key="row.label">
+                                                    <span class="o_hd_mix_seg"
+                                                          t-att-style="'flex-grow:' + row.count + ';background:' + row.color"
+                                                          t-att-title="row.label + ': ' + row.count + ' (' + percent(row.pct) + ')'"/>
+                                                </t>
+                                            </div>
+                                            <div class="o_hd_mix_labels">
+                                                <t t-foreach="mixRows(group[1])" t-as="row" t-key="row.label">
+                                                    <span class="o_hd_legend_item">
+                                                        <span class="o_hd_swatch" t-att-style="'background:' + row.color"/>
+                                                        <t t-esc="row.label"/>
+                                                        <strong class="ms-1" t-esc="percent(row.pct)"/>
+                                                        <span class="o_hd_muted ms-1">(<t t-esc="count(row.count)"/>)</span>
+                                                    </span>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>
