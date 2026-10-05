@@ -53,3 +53,8 @@ $hospital-tint: #eef6f5;
 // ---------------- Status bar & badges
 .o_statusbar_status .o_arrow_button_current { font-weight: 600; }
 .badge { border-radius: 999px; }
+
+// ---------------- Clinic dashboards: match the theme accent (chips, tabs,
+// links). Chart series keep their own colour-blind-safe palette.
+.o_hd_dashboard { --hd-accent: #0f766e; }
+.o_hd_dashboard .o_hd_chip.o_hd_chip_active { background: rgba(15, 118, 110, 0.08); }
