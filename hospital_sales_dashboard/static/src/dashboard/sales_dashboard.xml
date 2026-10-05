@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hospital_sales_dashboard.Dashboard">
+        <div t-ref="root" class="o_action o_hd_dashboard">
+            <div class="o_hd_scroll">
+                <t t-call="hospital_doctor_dashboard.BaseHeader"><t t-set="title">Sales Dashboard</t></t>
+
+                <div class="o_hd_filters">
+                    <t t-call="hospital_doctor_dashboard.BaseDates"/>
+                    <div class="o_hd_presets" role="group" aria-label="Order type">
+                        <t t-foreach="orderTypes" t-as="ot" t-key="ot.key">
+                            <button type="button" class="o_hd_chip" t-att-class="{ 'o_hd_chip_active': state.orderType === ot.key }"
+                                    t-att-aria-pressed="state.orderType === ot.key ? 'true' : 'false'"
+                                    t-on-click="() => this.setFilter('orderType', ot.key)">
+                                <i t-if="state.orderType === ot.key" class="fa fa-check me-1"/><t t-esc="ot.label"/>
+                            </button>
+                        </t>
+                    </div>
+                </div>
+
+                <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>
+
+                <t t-if="state.data">
+                    <div t-att-class="{ 'o_hd_body': true, 'o_hd_dim': state.loading }">
+                        <t t-call="hospital_doctor_dashboard.BaseKpis"><t t-set="tiles" t-value="kpiTiles"/></t>
+
+                        <div class="o_hd_grid">
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
+                                    <t t-set="title">Sales</t>
+                                    <t t-set="subtitle" t-value="'Confirmed orders ' + bucketLabel + ', incl. tax'"/>
+                                    <t t-set="chartKey" t-value="'sales'"/>
+                                </t>
+                                <div class="o_hd_legend" t-if="hasSales">
+                                    <t t-foreach="salesLegend" t-as="item" t-key="item.label">
+                                        <span class="o_hd_legend_item">
+                                            <span class="o_hd_swatch" t-att-style="'background:' + item.color"/>
+                                            <t t-esc="item.label"/><strong class="ms-1" t-esc="item.value"/>
+                                        </span>
+                                    </t>
+                                </div>
+                                <t t-if="!hasSales"><div class="o_hd_empty">No confirmed sales in this period</div></t>
+                                <t t-elif="state.tables.sales">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Period</th><th class="text-end">OP pharmacy</th><th class="text-end">OTC</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.series.labels" t-as="lbl" t-key="lbl_index">
+                                            <td t-esc="lbl"/>
+                                            <td class="text-end" t-esc="money(state.data.series.op[lbl_index])"/>
+                                            <td class="text-end" t-esc="money(state.data.series.otc[lbl_index])"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.sales" label="'Sales ' + bucketLabel" height="260"/>
+                            </div>
+
+                            <t t-foreach="[
+                                    ['products', 'Top products', 'By sales value', state.data.top_products, 'Product'],
+                                    ['customers', 'Top customers', 'By sales value', state.data.top_customers, 'Customer'],
+                                    ['payments', 'Payments received', 'Customer payments by method (journal)', state.data.payments, 'Method'],
+                                ]" t-as="card" t-key="card[0]">
+                                <div t-att-class="{ 'o_hd_card': true, 'o_hd_span2': card[0] === 'payments' }">
+                                    <t t-call="hospital_doctor_dashboard.BaseCardHead">
+                                        <t t-set="title" t-value="card[1]"/>
+                                        <t t-set="subtitle" t-value="card[2]"/>
+                                        <t t-set="chartKey" t-value="card[0]"/>
+                                    </t>
+                                    <t t-if="!card[3].length"><div class="o_hd_empty">Nothing in this period</div></t>
+                                    <t t-elif="state.tables[card[0]]">
+                                        <t t-call="hospital_doctor_dashboard.BaseRankTable">
+                                            <t t-set="rows" t-value="card[3]"/>
+                                            <t t-set="nameLabel" t-value="card[4]"/>
+                                            <t t-set="valueLabel">Amount</t>
+                                            <t t-set="valueKey" t-value="'amount'"/>
+                                            <t t-set="isMoney" t-value="true"/>
+                                        </t>
+                                    </t>
+                                    <DashChart t-else="" config="charts[card[0]]" label="card[1]" height="chartHeight(card[3].length)"/>
+                                </div>
+                            </t>
+                        </div>
+
+                        <!-- ============ Lists ============ -->
+                        <div class="o_hd_card o_hd_lists mt-3">
+                            <div class="o_hd_tabs" role="tablist">
+                                <button type="button" role="tab" class="o_hd_tab" t-att-class="{ 'o_hd_tab_active': state.listTab === 'unpaid' }"
+                                        t-on-click="() => this.showList('unpaid')">
+                                    <i class="fa fa-file-text-o me-1"/>Unpaid invoices<span class="o_hd_badge" t-esc="state.data.lists.unpaid.total"/>
+                                </button>
+                                <button type="button" role="tab" class="o_hd_tab" t-att-class="{ 'o_hd_tab_active': state.listTab === 'to_invoice' }"
+                                        t-on-click="() => this.showList('to_invoice')">
+                                    <i class="fa fa-pencil-square-o me-1"/>Orders to invoice<span class="o_hd_badge" t-esc="state.data.lists.to_invoice.total"/>
+                                </button>
+                            </div>
+                            <div class="o_hd_list_wrap">
+                                <t t-if="!currentList.rows.length">
+                                    <div class="o_hd_empty"><i class="fa fa-check-circle me-2" style="color:#0ca30c"/>Nothing to report</div>
+                                </t>
+                                <table t-elif="state.listTab === 'unpaid'" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Due</th><th>Status</th><th class="text-end">Amount due</th></tr></thead>
+                                    <tbody><tr t-foreach="currentList.rows" t-as="r" t-key="r.id" class="o_hd_row" t-on-click="() => this.openRecord('account.move', r.id)">
+                                        <td t-esc="r.name"/><td t-esc="r.partner"/><td t-esc="r.date"/><td t-esc="r.due"/>
+                                        <td><span t-att-class="{ 'o_hd_pill': true, 'o_hd_pill_critical': r.days_overdue > 0 }">
+                                            <i t-att-class="'fa me-1 ' + (r.days_overdue > 0 ? 'fa-exclamation-circle' : 'fa-clock-o')" aria-hidden="true"/>
+                                            <t t-esc="overdueText(r.days_overdue)"/></span></td>
+                                        <td class="text-end" t-esc="money(r.residual)"/>
+                                    </tr></tbody>
+                                </table>
+                                <table t-else="" class="table table-sm table-hover o_hd_table">
+                                    <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Type</th><th class="text-end">Total</th></tr></thead>
+                                    <tbody><tr t-foreach="currentList.rows" t-as="r" t-key="r.id" class="o_hd_row" t-on-click="() => this.openRecord('sale.order', r.id)">
+                                        <td t-esc="r.name"/><td t-esc="r.partner"/><td t-esc="r.date"/><td t-esc="r.type"/>
+                                        <td class="text-end" t-esc="money(r.amount)"/>
+                                    </tr></tbody>
+                                </table>
+                            </div>
+                            <div t-if="currentList.total > currentList.rows.length" class="o_hd_card_sub mt-2">
+                                Showing <t t-esc="currentList.rows.length"/> of <t t-esc="currentList.total"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            <t t-call="hospital_doctor_dashboard.BaseExpanded"/>
+        </div>
+    </t>
+</templates>

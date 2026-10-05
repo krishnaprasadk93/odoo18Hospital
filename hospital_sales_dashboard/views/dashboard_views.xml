@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_hospital_sales_dashboard" model="ir.actions.client">
+        <field name="name">Sales Dashboard</field>
+        <field name="tag">hospital_sales_dashboard</field>
+    </record>
+
+    <!-- Doctors only (see hospital_doctor_dashboard.menu_hospital_dashboards). -->
+    <menuitem id="menu_hospital_sales_dashboard"
+              name="Sales"
+              parent="hospital_doctor_dashboard.menu_hospital_dashboards"
+              action="action_hospital_sales_dashboard"
+              groups="hospital_management.group_hospital_doctor"
+              sequence="3"/>
+</odoo>
