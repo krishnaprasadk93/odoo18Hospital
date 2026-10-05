@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pharmacy_stock_notification_user,pharmacy.stock.notification.user,model_pharmacy_stock_notification,group_pharmacy_user,1,1,1,0
+access_pharmacy_stock_notification_manager,pharmacy.stock.notification.manager,model_pharmacy_stock_notification,group_pharmacy_manager,1,1,1,1
+access_pharmacy_stock_notification_all,pharmacy.stock.notification.all,model_pharmacy_stock_notification,base.group_user,1,0,0,0

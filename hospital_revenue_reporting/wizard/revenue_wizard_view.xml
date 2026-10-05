@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_hospital_revenue_wizard" model="ir.ui.view">
+        <field name="name">hospital.revenue.wizard.form</field>
+        <field name="model">hospital.revenue.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Clinic Revenue Report">
+                <group>
+                    <group>
+                        <field name="date_range"/>
+                    </group>
+                    <group>
+                        <field name="date_from"
+                               invisible="date_range != 'custom'"
+                               required="date_range == 'custom'"/>
+                        <field name="date_to"
+                               invisible="date_range != 'custom'"
+                               required="date_range == 'custom'"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_export_excel" type="object" string="Export Excel" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

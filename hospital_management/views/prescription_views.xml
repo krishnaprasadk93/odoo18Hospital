@@ -1,0 +1,19 @@
+<odoo>
+    <record id="view_prescription_line_list" model="ir.ui.view">
+        <field name="name">prescription.line.list</field>
+        <field name="model">prescription.line</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_out_of_stock == True">
+                <field name="patient_id"/>
+                <field name="medicine_id"/>
+                <field name="dosage_pattern" string="Dosage (M-A-E)"/>
+                <field name="duration_number"/>
+                <field name="duration_type"/>
+                <field name="quantity" string="Total Qty"/>
+                <field name="stock_status"/>
+                <field name="instruction"/>
+                <field name="is_out_of_stock" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+</odoo>

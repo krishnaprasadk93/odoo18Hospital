@@ -1,0 +1,425 @@
+<odoo>
+    <record id="view_hospital_op_ticket_form" model="ir.ui.view">
+        <field name="name">hospital.op.ticket.form</field>
+        <field name="model">hospital.op.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <!-- DRAFT STAGE -->
+                    <button name="action_create_consultation_invoice" string="Create Invoice" type="object" 
+                            invisible="state != 'draft' or draft_state != 'new' or is_free_revisit" class="oe_highlight"
+                            groups="hospital_management.group_hospital_receptionist"/>
+
+                    <button name="action_register_payment" string="Register Payment" type="object" 
+                            invisible="state != 'draft' or draft_state not in ['invoiced', 'paid']" class="btn-primary" 
+                            groups="hospital_management.group_hospital_receptionist"/>
+
+                    <button name="action_skip_payment" string="Skip Payment" type="object" 
+                            invisible="state != 'draft' or draft_state != 'new' or not is_free_revisit"
+                            groups="hospital_management.group_hospital_receptionist"/>
+
+                    <button name="action_generate_token" string="Generate Token" type="object" 
+                            invisible="state != 'draft' or draft_state not in ['paid', 'skipped']" class="oe_highlight" 
+                            groups="hospital_management.group_hospital_receptionist"/>
+
+                    <button name="action_cancel_draft" string="Cancel" type="object" 
+                            invisible="state != 'draft'" 
+                            confirm="Are you sure you want to cancel this visit?"
+                            groups="hospital_management.group_hospital_receptionist"/>
+
+                    <!-- CONSULTING STAGE -->
+                    <button name="action_start_consult" string="Start Consultation" type="object" 
+                            invisible="state != 'op'" class="oe_highlight" 
+                            groups="hospital_management.group_hospital_doctor"/>
+
+                    <button name="action_complete_consult" string="Complete Consultation" type="object" 
+                            invisible="state != 'consulting' or consulting_state != 'started'" class="oe_highlight" 
+                            groups="hospital_management.group_hospital_doctor"/>
+
+                    <button name="action_send_to_pharmacy" string="Send to Pharmacy" type="object" 
+                            invisible="state != 'consulting' or consulting_state != 'completed'" class="oe_highlight" 
+                            groups="hospital_management.group_hospital_doctor"/>
+
+                    <button name="action_skip_pharmacy" string="Skip Pharmacy" type="object" 
+                            invisible="state != 'consulting' or consulting_state != 'completed'" 
+                            groups="hospital_management.group_hospital_doctor"/>
+
+                    <!-- PHARMACY STAGE -->
+                    <button name="action_create_pharmacy_sale" string="Create Sale Order" type="object" 
+                            invisible="not (state in ('pharmacy', 'done') and pharmacy_state == 'pending')" class="oe_highlight"
+                            groups="hospital_management.group_hospital_pharmacist"/>
+
+                    <button name="action_create_pharmacy_invoice" string="Create Invoice" type="object" 
+                            invisible="state != 'pharmacy' or pharmacy_state == 'pending'" class="btn-primary" 
+                            groups="hospital_management.group_hospital_pharmacist"/>
+
+                    <button name="action_register_pharmacy_payment" string="Register Payment" type="object" 
+                            invisible="state != 'pharmacy' or pharmacy_state not in ['invoiced', 'paid']" class="btn-primary" 
+                            groups="hospital_management.group_hospital_pharmacist"/>
+
+                    <button name="action_pharmacy_done" string="Complete" type="object" 
+                            invisible="state != 'pharmacy' or pharmacy_state != 'paid'" class="oe_highlight" 
+                            groups="hospital_management.group_hospital_pharmacist"/>
+
+                    <button name="action_cancel_pharmacy" string="Skip Pharmacy" type="object"
+                            invisible="state != 'pharmacy'" 
+                            groups="hospital_management.group_hospital_pharmacist"/>
+
+                    <field name="state" widget="statusbar" statusbar_visible="draft,op,consulting,pharmacy,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_visits"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-history">
+                             <div class="o_stat_info">
+                                <span class="o_stat_text">Visit History</span>
+                            </div>
+                        </button>
+                        <button name="action_view_invoices" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                        </button>
+                        <button name="action_view_sale_orders" type="object" class="oe_stat_button" icon="fa-shopping-cart"
+                                invisible="sale_order_count == 0">
+                            <field name="sale_order_count" widget="statinfo" string="Sale Orders"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="visit_no" string="Visit Number"/>
+                        <h1><field name="visit_no"/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Status Details">
+                            <field name="draft_state" invisible="state != 'draft'"/>
+                            <field name="consulting_state" invisible="state != 'consulting'"/>
+                            <field name="pharmacy_state" invisible="state != 'pharmacy'"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group>
+
+                             <group>
+                                 <field name="patient_type"/>
+                                 <field name="patient_id" options="{'no_create': False}"/>
+                                  <field name="doctor_id" options="{'no_create': True}"/>
+                             </group>
+                            <group>
+                                <field name="visit_mode"
+                                   widget="radio"
+                                   options="{'horizontal': true}"
+                                   readonly="consultation_invoice_id or draft_state in ['invoiced', 'paid']"/>
+
+                             </group>
+                        </group>
+                        <group string="Visit Info (Consultation Fee Collected)">
+                            <field name="last_visit_date" readonly="1"/>
+                            <field name="last_visit_days" readonly="1"/>
+                            <field name="is_free_revisit" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="appointment_date"/>
+                            <field name="token_number" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Consultation Fee">
+                        <group>
+                          <field name="consultation_product_id"
+                               domain="[('type', '=', 'service'), ('name', 'ilike', 'consultation')]"
+                               options="{'no_create': True}"
+                               readonly="consultation_invoice_id or state != 'draft' or draft_state != 'new'"/>
+                            <field name="consultation_fee" readonly="state != 'draft' or draft_state != 'new'"/>
+                        </group>
+                        <group>
+                            <field name="consultation_invoice_id" readonly="1"/>
+                            <field name="amount_collected" readonly="1" invisible="not amount_collected"/>
+                            <field name="balance_amount" readonly="1" invisible="not amount_collected"/>
+                        </group>
+                    </group>
+
+                    <group groups="hospital_management.group_hospital_doctor">
+                        <field name="reason" placeholder="Diagnosis" string="Diagnosis"/>
+                    </group>
+
+                    <group string="Clinical History" groups="hospital_management.group_hospital_doctor">
+                        <field name="prescription_note"
+                               placeholder="Add clinical history of the patient"
+                               widget="html"
+                               nolabel="1"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Prescription" name="prescription">
+                             <div class="mb-2" invisible="not has_previous_prescription">
+                               <button name="action_copy_last_prescription"
+                                type="object"
+                                string="📋 Copy from Last Visit"
+                                class="btn btn-secondary btn-sm"
+                                invisible="not has_previous_prescription or state not in ('consulting')"/>
+
+                            </div>
+
+    <field name="has_previous_prescription" invisible="1"/>
+
+   <field name="prescription_ids">
+    <list editable="bottom"
+          decoration-danger="is_out_of_stock == True"
+          decoration-warning="is_out_of_stock == False and forecasted_qty &lt; quantity * 2"
+          class="o_prescription_list">
+
+        <!-- Medicine -->
+        <field name="medicine_id"
+               domain="[('is_medicine','=',True)]"
+               placeholder="Select medicine..."
+               options="{'no_create': False}"
+               string="Medicine"/>
+
+        <!-- Unit badge — shown once per row, auto from medicine type -->
+        <field name="dose_unit"
+               widget="badge"
+               string="Unit"
+               readonly="1"
+               options="{'color_field': 'dose_unit'}"/>
+
+        <!-- Dose fields — direct Float, select-on-focus JS handles clear -->
+        <field name="morning_dose"
+               string="Morning"
+               widget="float"
+               options='{"digits": [16, 2]}'
+               class="o_dose_cell"/>
+
+        <field name="afternoon_dose"
+               string="Afternoon"
+               widget="float"
+               options='{"digits": [16, 2]}'
+               class="o_dose_cell"/>
+
+        <field name="evening_dose"
+               string="Evening"
+               widget="float"
+               options='{"digits": [16, 2]}'
+               class="o_dose_cell"/>
+
+        <!-- Duration -->
+        <field name="duration_number" string="For"/>
+        <field name="duration_type" string="Period"/>
+
+        <!-- When to take -->
+        <field name="instruction" string="When"/>
+
+        <!-- Quantity auto-calc -->
+        <field name="quantity" string="Qty"  widget="float"
+               options='{"digits": [16, 2]}'
+               class="o_dose_cell" readonly="0"/>
+
+        <!-- Stock status -->
+        <field name="stock_status" string="Stock" readonly="1"/>
+
+        <!-- Notes optional -->
+        <field name="notes" optional="hide" placeholder="Special instructions..."/>
+
+        <!-- Hidden but needed for decorations and compute -->
+        <field name="is_out_of_stock" column_invisible="1"/>
+        <field name="forecasted_qty" column_invisible="1"/>
+        <field name="available_qty" column_invisible="1"/>
+        <field name="stock_location_id" column_invisible="1"/>
+        <field name="dosage_pattern" column_invisible="1"/>
+        <field name="morning_display" column_invisible="1"/>
+        <field name="afternoon_display" column_invisible="1"/>
+        <field name="evening_display" column_invisible="1"/>
+
+    </list>
+</field>
+
+
+</page>
+
+
+
+
+                        <page string="Procedures">
+
+    <field name="procedure_line_ids">
+
+    <!-- BILLING GRID -->
+    <list>
+        <field name="product_id" string="Procedure"
+               domain="[('type', '=', 'service'), ('is_procedure', '=', True)]"
+               context="{'default_type': 'service', 'default_is_procedure': True}"/>
+        <field name="description" />
+        <field name="qty"/>
+        <field name="price_unit" string="Price"/>
+        <field name="subtotal" string="Subtotal" readonly="1"/>
+    </list>
+
+    <!-- POPUP DETAIL FORM -->
+    <form string="Procedure Line">
+        <group>
+            <field name="product_id"
+                   domain="[('type', '=', 'service'), ('is_procedure', '=', True)]"
+                   context="{'default_type': 'service', 'default_is_procedure': True}"/>
+            <field name="description" class="procedure_desc_box" placeholder="Enter procedure notes..."/>
+            <group>
+                <field name="qty"/>
+                <field name="price_unit"/>
+                <field name="subtotal" readonly="1"/>
+            </group>
+        </group>
+    </form>
+
+</field>
+
+
+</page>
+
+
+                       <!-- <page string="Billing" >
+                            <group>
+                                <field name="pharmacy_sale_id" readonly="1"/>
+                                <field name="pharmacy_invoice_id" readonly="1"/>
+                                <field name="attachment_id"/>
+                            </group>
+                        </page> -->
+                    </notebook>
+                </sheet>
+               <!-- <chatter />-->
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hospital_op_ticket_list" model="ir.ui.view">
+        <field name="name">hospital.op.ticket.list</field>
+        <field name="model">hospital.op.ticket</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'op'" decoration-warning="state == 'consulting'"
+                  decoration-success="state == 'done'" decoration-muted="state == 'cancelled'">
+                <field name="visit_no"/>
+                <field name="token_number"/>
+                <field name="patient_id"/>
+                <field name="doctor_id"/>
+                <field name="consultation_fee"/>
+                <field name="amount_collected" optional="show"/>
+                <field name="balance_amount" optional="show"/>
+                <field name="appointment_date"/>
+                <field name="state"/>
+                <field name="draft_state" optional="show"/>
+                <field name="consulting_state" optional="hide"/>
+                <field name="pharmacy_state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hospital_op_ticket_search" model="ir.ui.view">
+        <field name="name">hospital.op.ticket.search</field>
+        <field name="model">hospital.op.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="visit_no"/>
+                <field name="patient_id"/>
+                <field name="doctor_id"/>
+                <filter string="Today" name="today"
+                        domain="[('appointment_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')),
+                                 ('appointment_date', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="OP Generated" name="op_generated" domain="[('state', '=', 'op')]"/>
+                <filter string="Consulting" name="consulting" domain="[('state', '=', 'consulting')]"/>
+                <filter string="Pharmacy" name="pharmacy" domain="[('state', '=', 'pharmacy')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Doctor" name="group_doctor" context="{'group_by': 'doctor_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="view_op_ticket_popup_list" model="ir.ui.view">
+    <field name="name">hospital.op.ticket.popup.list</field>
+    <field name="model">hospital.op.ticket</field>
+    <field name="arch" type="xml">
+        <list string="Patient Visits" create="false">
+            <field name="patient_id"/>
+            <field name="doctor_id"/>
+            <field name="appointment_date"/>
+            <!-- This button opens form in new popup -->
+            <button name="action_open_form_popup"
+                    type="object"
+                    icon="fa-eye"
+                    string="View"
+                    class="btn-sm btn-primary"/>
+        </list>
+    </field>
+</record>
+<record id="view_op_ticket_popup_form" model="ir.ui.view">
+    <field name="name">hospital.op.ticket.popup.form</field>
+    <field name="model">hospital.op.ticket</field>
+    <field name="arch" type="xml">
+        <form string="Visit Details" style="background:white !important;">
+            <sheet style="background:white !important;">
+                <div class="oe_title">
+                    <label for="visit_no" string="Visit Number"/>
+                    <h1><field name="visit_no" readonly="1"/></h1>
+                </div>
+
+                <group>
+                    <group string="Status Details">
+                        <field name="patient_id" readonly="1"/>
+                        <field name="patient_type" readonly="1"/>
+                        <field name="doctor_id" readonly="1"/>
+                        <field name="appointment_date" readonly="1"/>
+                        <field name="token_number" readonly="1"/>
+                        <field name="state" readonly="1" widget="badge"/>
+                    </group>
+                </group>
+
+                <group string="Diagnosis" groups="hospital_management.group_hospital_doctor">
+                    <field name="reason" readonly="1" nolabel="1"
+                           placeholder="No diagnosis recorded"/>
+                </group>
+
+                <group string="Clinical History" groups="hospital_management.group_hospital_doctor">
+                    <field name="prescription_note"
+                           readonly="1"
+                           widget="html"
+                           nolabel="1"/>
+                </group>
+
+                <notebook>
+                    <page string="Prescription" name="prescription">
+                        <field name="prescription_ids" readonly="1">
+                            <list>
+                                <field name="medicine_id"/>
+                                <field name="morning_display" string="Morning"/>
+                                <field name="afternoon_display" string="Afternoon"/>
+                                <field name="evening_display" string="Evening"/>
+                                <field name="duration_number" string="For"/>
+                                <field name="duration_type" string="Period"/>
+                                <field name="instruction" string="When"/>
+                                <field name="quantity" string="Qty"/>
+                                <field name="notes" optional="hide"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <page string="Procedures" name="procedures">
+                        <field name="procedure_line_ids" readonly="1">
+                            <list>
+                                <field name="product_id" string="Procedure"/>
+                                <field name="description"/>
+                                <field name="qty"/>
+                                <field name="price_unit" string="Price"/>
+                                <field name="subtotal" string="Subtotal"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+            </sheet>
+            <!-- No footer = No Save/Discard -->
+        </form>
+    </field>
+</record>
+
+
+</odoo>

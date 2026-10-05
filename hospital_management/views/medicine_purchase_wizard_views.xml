@@ -1,0 +1,24 @@
+<odoo>
+    <record id="view_medicine_purchase_wizard_form" model="ir.ui.view">
+    <field name="name">medicine.purchase.wizard.form</field>
+    <field name="model">medicine.purchase.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Purchase Medicine">
+            <group>
+                <field name="product_id" readonly="1"/>
+                <field name="quantity"/>
+                <field name="batch_no"/>
+                <field name="expiry_date"/>
+                <field name="selling_price"/>
+
+            </group>
+            <footer>
+                <button name="action_confirm" type="object"
+                        string="Confirm" class="btn-primary"/>
+                <button string="Cancel" special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+</odoo>

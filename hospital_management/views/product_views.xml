@@ -1,0 +1,51 @@
+<odoo>
+    <record id="view_product_template_form_medicine" model="ir.ui.view">
+        <field name="name">product.template.form.medicine</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_policy']" position="after">
+                <field name="is_medicine"/>
+                <field name="is_procedure"/>
+            </xpath>
+
+            <notebook position="inside">
+                <page string="Medicine Details" name="medicine_details" invisible="not is_medicine">
+                    <group>
+                        <group>
+                            <field name="medicine_brand_id"/>
+                            <field name="generic_name"/>
+                            <field name="dosage"/>
+                        </group>
+                        <group>
+                            <field name="medicine_type"/>
+                            <field name="prescription_required"/>
+                            <field name="expiry_alert_days"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <record id="view_product_template_search_medicine" model="ir.ui.view">
+        <field name="name">product.template.search.medicine</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <search position="inside">
+                <filter string="Medicines" name="medicines" domain="[('is_medicine', '=', True)]"/>
+                <filter string="Brand" name="group_brand" context="{'group_by': 'medicine_brand_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_medicine_list" model="ir.actions.act_window">
+        <field name="name">Medicines</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_medicine', '=', True)]</field>
+        <field name="context">{'default_is_medicine': True, 'search_default_medicines': 1}</field>
+    </record>
+</odoo>
+

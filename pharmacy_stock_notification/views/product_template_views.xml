@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Product Template Form View -->
+    <record id="view_product_template_form_inherit_pharmacy" model="ir.ui.view">
+        <field name="name">product.template.form.inherit.pharmacy</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Add notification button -->
+            <div name="button_box" position="inside">
+                <button name="action_view_notifications"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-bell"
+                        invisible="low_stock_notification_count == 0">
+                    <field name="low_stock_notification_count" widget="statinfo" string="Alerts"/>
+                </button>
+            </div>
+
+            <!-- Add minimum qty field in inventory page -->
+            <xpath expr="//page[@name='inventory']" position="inside">
+                <group string="Low Stock Alert Settings" name="low_stock_settings">
+                    <field name="enable_low_stock_alert"/>
+                    <field name="minimum_qty"
+                           invisible="not enable_low_stock_alert"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

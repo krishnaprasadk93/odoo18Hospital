@@ -1,0 +1,13 @@
+<odoo>
+
+    <record id="hospital_revenue_xlsx" model="ir.actions.report">
+        <field name="name">Hospital Revenue Excel</field>
+        <field name="model">hospital.revenue.wizard</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">hospital_revenue_reporting.revenue_xlsx</field>
+        <field name="report_file">hospital_revenue.xlsx</field>
+        <field name="binding_model_id" ref="model_hospital_revenue_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>

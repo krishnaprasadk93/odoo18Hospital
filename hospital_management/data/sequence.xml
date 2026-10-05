@@ -1,0 +1,32 @@
+<odoo>
+    <!-- Use noupdate="1" to prevent the sequence from resetting to 1 on module upgrades -->
+    <data noupdate="1">
+
+        <record id="seq_op_token" model="ir.sequence">
+            <field name="name">Doctor Token</field>
+            <field name="code">hospital.op.token</field>
+            <field name="implementation">no_gap</field>
+            <field name="padding">3</field>
+            <field name="number_increment">1</field>
+        </record>
+
+        <record id="seq_patient_number" model="ir.sequence">
+            <field name="name">Patient Number</field>
+            <field name="code">hospital.patient</field>
+            <field name="implementation">no_gap</field>
+            <field name="padding">9</field>
+            <field name="number_increment">1</field>
+            <field name="number_next">1</field>
+        </record>
+
+        <record id="seq_hospital_visit" model="ir.sequence">
+            <field name="name">Visit Number</field>
+            <field name="code">hospital.visit</field>
+            <field name="prefix">%(year)s/%(month)s/%(day)s/</field>
+            <field name="padding">3</field>
+            <field name="number_increment">1</field>
+            <field name="implementation">no_gap</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,190 @@
+<odoo>
+    <record id="view_hospital_patient_form" model="ir.ui.view">
+        <field name="name">hospital.patient.form</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <!-- Button Box moved directly into the main form -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_visits"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-stethoscope">
+                            <field name="visit_count" widget="statinfo" string="Visits"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1><field name="patient_seq"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                             <field name="age"/>
+                            <field name="date_of_birth"/>
+                            <field name="phone"/>
+                        </group>
+                        <group>
+                            <label for="blood_group" string="Blood Group"/>
+                            <div class="o_row">
+                                <field name="blood_group" class="oe_inline"/>
+                                <field name="rh_type" widget="radio" class="oe_inline"/>
+                            </div>
+                            <field name="gender"/>
+                            <field name="marital_status"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Personal Information">
+                            <group>
+                                <group>
+                                    <label for="street" string="Contact"/>
+                                    <div class="o_address_format">
+                                        <field name="street" placeholder="Street..." class="o_address_street"/>
+                                        <field name="street2" placeholder="Street 2..." class="o_address_street"/>
+                                        <field name="city" placeholder="City" class="o_address_city"/>
+                                        <field name="state_id" class="o_address_state" placeholder="State" options="{'no_open': True}"/>
+                                        <field name="zip" placeholder="ZIP" class="o_address_zip"/>
+                                        <field name="country_id" placeholder="Country" class="o_address_country" options="{'no_open': True, 'no_create': True}"/>
+                                    </div>
+                                    <field name="email"/>
+                                </group>
+                                <group>
+                                    <field name="barcode_png" widget="image" class="float-end" style="width: 200px;"/>
+                                    <field name="barcode"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Family and Insurance">
+                            <group>
+                                <field name="insurance_id"/>
+                                <field name="house_level"/>
+                                <field name="work_home"/>
+                            </group>
+                        </page>
+                        <page string="Life Style">
+                            <group>
+                                <group>
+                                    <field name="exercise"/>
+                                    <field name="diet"/>
+                                    <field name="sleep_hrs"/>
+                                </group>
+                                <group>
+                                    <field name="smoker"/>
+                                    <field name="drinker"/>
+                                    <field name="alcoholic"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Medical">
+                            <group>
+                                <field name="doctor_id"/>
+                                <field name="fertile"/>
+                                <field name="menarche_age"/>
+                                <field name="pause"/>
+                                <field name="mammography"/>
+                            </group>
+                        </page>
+                        <page string="Socioeconomic">
+                            <group>
+                                <field name="economic_level"/>
+                                <field name="education_level"/>
+                                <field name="occupation"/>
+                                <field name="income"/>
+                            </group>
+                        </page>
+                        <page string="Internal Notes">
+                            <field name="comment" placeholder="Internal notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hospital_patient_list" model="ir.ui.view">
+        <field name="name">hospital.patient.list</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="patient_seq"/>
+                <field name="name"/>
+                <field name="gender"/>
+                <field name="phone" required="1"/>
+                <field name="blood_group"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hospital_patient_search" model="ir.ui.view">
+        <field name="name">hospital.patient.search</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <search string="Search Patients">
+                <!-- Quick Search Fields -->
+                <field name="patient_seq"
+                   string="Patient ID / Name / Phone / Mobile"
+                   filter_domain="['|', '|', '|',
+                                   ('patient_seq', 'ilike', self),
+                                   ('name', 'ilike', self),
+                                   ('phone', 'ilike', self),
+                                   ('mobile', 'ilike', self)]"/>
+                 <!-- Individual field searches (optional) -->
+                <field name="patient_seq"/>
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="mobile"/>
+                <separator string="Activity"/>
+
+                <!-- Visited Today -->
+                <filter name="visited_today"
+                        string="Visited Today"
+                        domain="[('visit_ids.create_date','>=',context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+
+                <!-- New Patients This Month -->
+                <filter name="new_this_month"
+                        string="New This Month"
+                        domain="[('create_date','>=',(context_today().replace(day=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+
+                <separator/>
+
+                <!-- Gender -->
+                <filter name="male" string="Male" domain="[('gender','=','male')]"/>
+                <filter name="female" string="Female" domain="[('gender','=','female')]"/>
+
+                <separator/>
+
+                <!-- Medical -->
+                <filter name="smoker" string="Smokers" domain="[('smoker','=',True)]"/>
+                <filter name="drinker" string="Drinkers" domain="[('drinker','=',True)]"/>
+                <filter name="alcoholic" string="Alcoholic" domain="[('alcoholic','=',True)]"/>
+
+                <separator/>
+
+                <!-- Socioeconomic -->
+                <filter name="low_income" string="Lower Class" domain="[('economic_level','=','low')]"/>
+                <filter name="middle_income" string="Middle Class" domain="[('economic_level','=','middle')]"/>
+                <filter name="upper_income" string="Upper Class" domain="[('economic_level','=','upper')]"/>
+
+                <separator/>
+
+                <!-- Group By -->
+                <group expand="0" string="Group By">
+                    <filter name="group_gender" string="Gender" context="{'group_by':'gender'}"/>
+                    <filter name="group_blood" string="Blood Group" context="{'group_by':'blood_group'}"/>
+                    <filter name="group_doctor" string="Family Doctor" context="{'group_by':'doctor_id'}"/>
+                    <filter name="group_economic" string="Socioeconomic" context="{'group_by':'economic_level'}"/>
+                </group>
+
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hospital_patient" model="ir.actions.act_window">
+        <field name="name">Patients</field>
+        <field name="res_model">hospital.patient</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,9 @@
+<odoo>
+    <!-- This data file creates Kerala fiscal position if not exists -->
+    <record id="fiscal_position_kerala" model="account.fiscal.position">
+        <field name="name">Within Kerala</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="country_id" ref="base.in"/>
+        <field name="state_ids" eval="[(4, ref('base.state_in_kl'))]"/>
+    </record>
+</odoo>

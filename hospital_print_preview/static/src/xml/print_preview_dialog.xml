@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hospital_print_preview.PrintPreviewDialog">
+        <Dialog title="'Print Preview (80mm)'" size="'sm'" contentClass="'o_print_preview_dialog'">
+            <div class="o_print_preview_wrapper">
+                <div class="o_print_preview_paper">
+                    <t t-foreach="lines" t-as="line" t-key="line.key">
+                        <div class="o_print_preview_line" t-att-style="line.style" t-esc="line.text"/>
+                    </t>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="onPrintClick">Print</button>
+                <button class="btn btn-secondary" t-on-click="onCancelClick">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

@@ -1,0 +1,68 @@
+
+<odoo>
+<template id="invoice_80mm_template">
+<t t-call="web.basic_layout">
+<t t-foreach="docs" t-as="o">
+<div style="width:76mm; font-weight:600; font-size:13px; font-family:monospace;">
+
+<t t-if="o.company_id.logo">
+    <div style="text-align:center; margin-bottom:5px;">
+        <img t-att-src="image_data_uri(o.company_id.logo)"
+             style="max-height:55px; max-width:65mm;"/>
+    </div>
+</t>
+
+<div style="text-align:center;">
+    <b><t t-esc="o.company_id.name"/></b><br/>
+    <t t-esc="o.company_id.phone"/>
+</div>
+
+<hr/>
+
+
+<center><b style="font-size:14px;">RECEIPT</b></center>
+
+<hr/>
+
+Patient : <t t-esc="o.op_ticket_id.patient_id.name or o.visit_no.name"/><br/>
+Patient No: <t t-esc="o.op_ticket_id.patient_id.patient_seq or '-'"/><br/>
+Visit No  : <t t-esc="o.op_ticket_id.visit_no or '-'"/><br/>
+Doctor    : <t t-esc="o.op_ticket_id.doctor_id.name or '-'"/><br/>
+    Invoice   : <b><t t-esc="o.name"/></b><br/>
+Date      : <t t-esc="o.invoice_date"/>
+
+<hr/>
+
+<t t-foreach="o.invoice_line_ids" t-as="line">
+<t t-esc="line.name"/>
+<span style="float:right;"><t t-esc="line.price_subtotal"/></span><br/>
+</t>
+
+<hr/>
+TOTAL: <t t-esc="o.amount_total"/><br/>
+
+<t t-if="o.amount_residual > 0">
+Balance Due: <t t-esc="o.amount_residual"/><br/>
+</t>
+
+<hr/>
+<b>Payments</b><br/>
+
+<t t-set="payments" t-value="o.invoice_payments_widget.get('content', []) if o.invoice_payments_widget else []"/>
+
+<t t-foreach="payments" t-as="pay">
+    <t t-esc="pay.get('journal_name')"/> :
+    <t t-esc="pay.get('amount')"/><br/>
+</t>
+
+
+<hr/>
+<center> *** Get Well Soon ***</center>
+
+</div>
+</t>
+
+</t>
+</template>
+
+</odoo>

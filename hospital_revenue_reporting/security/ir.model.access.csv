@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hospital_revenue_dashboard,hospital.revenue.dashboard,model_hospital_revenue_dashboard,,1,0,0,0
+access_hospital_revenue_wizard,hospital.revenue.wizard,model_hospital_revenue_wizard,,1,1,1,1

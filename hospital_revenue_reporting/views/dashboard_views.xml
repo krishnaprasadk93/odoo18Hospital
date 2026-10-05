@@ -1,0 +1,42 @@
+<odoo>
+
+    <!-- ================= MONTHLY TREND GRAPH ================= -->
+    <record id="view_hospital_revenue_month_graph" model="ir.ui.view">
+        <field name="name">hospital.revenue.month.graph</field>
+        <field name="model">hospital.revenue.dashboard</field>
+        <field name="arch" type="xml">
+            <graph string="Monthly Revenue Trend" type="line">
+                <field name="month" type="row"/>
+                <field name="total_revenue" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+
+    <!-- ================= TOP DOCTORS GRAPH ================= -->
+    <record id="view_hospital_top_doctors_graph" model="ir.ui.view">
+        <field name="name">hospital.top.doctors.graph</field>
+        <field name="model">hospital.revenue.dashboard</field>
+        <field name="arch" type="xml">
+            <graph string="Top 5 Doctors by Revenue" type="bar">
+                <field name="doctor_name" type="row"/>
+                <field name="total_revenue" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+
+    <!-- ================= SEARCH VIEW (OPTIONAL FILTERS) ================= -->
+    <record id="view_hospital_revenue_dashboard_search" model="ir.ui.view">
+        <field name="name">hospital.revenue.dashboard.search</field>
+        <field name="model">hospital.revenue.dashboard</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="month"/>
+                <field name="doctor_name"/>
+            </search>
+        </field>
+    </record>
+
+
+</odoo>

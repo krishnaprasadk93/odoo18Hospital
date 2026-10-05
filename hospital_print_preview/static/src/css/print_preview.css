@@ -1,0 +1,25 @@
+.o_print_preview_wrapper {
+    display: flex;
+    justify-content: center;
+    background-color: #d9d9d9;
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.o_print_preview_paper {
+    width: 80mm;
+    min-width: 280px;
+    max-width: 320px;
+    background-color: #ffffff;
+    color: #000000;
+    padding: 8px 6px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+    font-family: "Courier New", Courier, monospace;
+    line-height: 1.35;
+}
+
+.o_print_preview_line {
+    white-space: pre-wrap;
+    word-break: break-word;
+}

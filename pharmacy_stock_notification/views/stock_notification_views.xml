@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Notification list View -->
+    <record id="view_pharmacy_stock_notification_list" model="ir.ui.view">
+        <field name="name">pharmacy.stock.notification.list</field>
+        <field name="model">pharmacy.stock.notification</field>
+        <field name="arch" type="xml">
+            <list string="Stock Notifications"
+                  decoration-danger="state == 'pending'"
+                  decoration-warning="state == 'acknowledged'"
+                  decoration-muted="state == 'resolved'">
+                <field name="name"/>
+                <field name="create_date" string="Alert Date"/>
+                <field name="product_id"/>
+                <field name="product_code"/>
+                <field name="current_qty"/>
+                <field name="minimum_qty"/>
+                <field name="shortage_qty"/>
+                <field name="uom_id"/>
+                <field name="state" widget="badge"
+                       decoration-danger="state == 'pending'"
+                       decoration-warning="state == 'acknowledged'"
+                       decoration-success="state == 'resolved'"/>
+                <field name="acknowledged_by"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Notification Form View -->
+    <record id="view_pharmacy_stock_notification_form" model="ir.ui.view">
+        <field name="name">pharmacy.stock.notification.form</field>
+        <field name="model">pharmacy.stock.notification</field>
+        <field name="arch" type="xml">
+            <form string="Stock Notification">
+                <header>
+                    <button name="action_acknowledge"
+                            string="Acknowledge"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'pending'"
+                            groups="pharmacy_stock_notification.group_pharmacy_user"/>
+                    <button name="action_resolve"
+                            string="Resolve"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state == 'resolved'"
+                            groups="pharmacy_stock_notification.group_pharmacy_user"/>
+                    <button name="action_check_current_stock"
+                            string="Refresh Stock"
+                            type="object"
+                            icon="fa-refresh"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,acknowledged,resolved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Product Information">
+                            <field name="product_id" readonly="1"/>
+                            <field name="product_code" readonly="1"/>
+                            <field name="uom_id" readonly="1"/>
+                        </group>
+                        <group string="Stock Information">
+                            <field name="current_qty" readonly="1"/>
+                            <field name="minimum_qty" readonly="1"/>
+                            <field name="shortage_qty" readonly="1"
+                                   decoration-danger="shortage_qty > 0"/>
+                        </group>
+                    </group>
+
+                    <group string="Acknowledgment Details" invisible="state == 'pending'">
+                        <field name="acknowledged_by" readonly="1"/>
+                        <field name="acknowledged_date" readonly="1"/>
+                    </group>
+
+                    <group string="Notes">
+                        <field name="notes" nolabel="1" placeholder="Add notes..."/>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <!-- Notification Search View -->
+    <record id="view_pharmacy_stock_notification_search" model="ir.ui.view">
+        <field name="name">pharmacy.stock.notification.search</field>
+        <field name="model">pharmacy.stock.notification</field>
+        <field name="arch" type="xml">
+            <search string="Stock Notifications">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="product_code"/>
+
+                <filter name="pending" string="Pending" domain="[('state','=','pending')]"/>
+                <filter name="acknowledged" string="Acknowledged" domain="[('state','=','acknowledged')]"/>
+                <filter name="resolved" string="Resolved" domain="[('state','=','resolved')]"/>
+
+                <separator/>
+                <filter name="my_notifications" string="My Notifications"
+                        domain="[('activity_ids.user_id','=',uid)]"/>
+
+                <group expand="0" string="Group By">
+                    <filter name="group_product" string="Product" context="{'group_by':'product_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

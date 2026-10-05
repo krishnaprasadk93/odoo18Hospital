@@ -1,0 +1,43 @@
+<odoo>
+    <record id="view_consultation_payment_wizard_form" model="ir.ui.view">
+        <field name="name">consultation.payment.wizard.form</field>
+        <field name="model">consultation.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Consultation Payment">
+                <sheet>
+                    <group>
+                        <field name="op_ticket_id" readonly="1"/>
+                        <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                    </group>
+                    <group string="Payment Split">
+                        <group>
+                            <field name="journal_cash_id"/>
+                            <field name="amount_cash"/>
+                        </group>
+                        <group>
+                            <field name="journal_card_id"/>
+                            <field name="amount_card"/>
+                        </group>
+                        <group>
+                            <field name="journal_upi_id"/>
+                            <field name="amount_upi"/>
+                        </group>
+                    </group>
+                    <group string="Cash Received">
+                        <group>
+                            <field name="amount_given"/>
+                        </group>
+                        <group>
+                            <field name="balance_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_process_payment" string="Create Invoice &amp; Pay" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

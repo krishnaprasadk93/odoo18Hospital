@@ -1,0 +1,30 @@
+<odoo>
+    <record id="view_split_payment_wizard" model="ir.ui.view">
+        <field name="name">split.payment.wizard.form</field>
+        <field name="model">split.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Split Payment and Invoice">
+                <group>
+                    <field name="sale_id" readonly="1"/>
+                    <field name="amount_total" readonly="1"/>
+                </group>
+                <group string="Payment Split" col="2">
+                    <field name="cash_journal_id"/>
+                    <field name="cash_amount"/>
+                    <field name="card_journal_id"/>
+                    <field name="card_amount"/>
+                    <field name="upi_journal_id"/>
+                    <field name="upi_amount"/>
+                </group>
+                <group string="Cash Received" col="2">
+                    <field name="amount_given"/>
+                    <field name="balance_amount"/>
+                </group>
+                <footer>
+                    <button name="action_create_invoice_payment" type="object" string="Create Invoice and Pay" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

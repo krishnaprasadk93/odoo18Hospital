@@ -1,0 +1,86 @@
+<!-- report/invoice_thermal_report.xml -->
+<odoo>
+  <report
+      id="report_invoice_thermal"
+      string="Thermal Invoice"
+      model="account.move"
+      report_type="qweb-pdf"
+      name="account_invoice_qz_print.invoice_thermal_template"
+      file="account_invoice_qz_print.invoice_thermal_template"
+  />
+
+  <template id="invoice_thermal_template">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="o">
+        <t t-call="account_invoice_qz_print.invoice_thermal_document"/>
+      </t>
+    </t>
+  </template>
+
+  <template id="invoice_thermal_document">
+    <t t-set="company" t-value="o.company_id"/>
+    <div class="thermal-invoice">
+      <div class="header">
+        <h3><t t-esc="company.name"/></h3>
+        <div><t t-esc="company.street"/></div>
+        <div><t t-esc="company.phone"/></div>
+      </div>
+      <div class="info">
+        <div>Invoice: <t t-esc="o.name"/></div>
+        <div>Date: <t t-esc="o.invoice_date"/></div>
+        <div>Customer: <t t-esc="o.partner_id.name"/></div>
+      </div>
+      <table class="lines">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="right">Qty</th>
+            <th class="right">Price</th>
+            <th class="right">Sub</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr t-foreach="o.invoice_line_ids" t-as="line">
+            <td><t t-esc="line.name"/></td>
+            <td class="right"><t t-esc="line.quantity"/></td>
+            <td class="right"><t t-esc="line.price_unit"/></td>
+            <td class="right"><t t-esc="line.price_subtotal"/></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="totals">
+        <div>Total: <span class="right"><t t-esc="o.amount_total"/></span></div>
+      </div>
+      <div class="footer">
+        Thank you!
+      </div>
+    </div>
+  </template>
+
+  <template id="invoice_thermal_styles" inherit_id="web.external_layout_standard">
+    <xpath expr="//head" position="inside">
+      <style type="text/css">
+        .thermal-invoice {
+            width: 80mm;
+            font-size: 10px;
+        }
+        .thermal-invoice .header, .thermal-invoice .info,
+        .thermal-invoice .totals, .thermal-invoice .footer {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .thermal-invoice table.lines {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .thermal-invoice table.lines th,
+        .thermal-invoice table.lines td {
+            padding: 2px 0;
+        }
+        .thermal-invoice .right {
+            text-align: right;
+        }
+      </style>
+    </xpath>
+  </template>
+</odoo>

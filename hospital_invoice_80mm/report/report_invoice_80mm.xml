@@ -1,0 +1,34 @@
+
+<odoo>
+    <record id="paperformat_80mm" model="report.paperformat">
+        <field name="name">80mm Receipt</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">200</field>
+        <field name="page_width">80</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">1</field>
+        <field name="margin_bottom">1</field>
+        <field name="margin_left">1</field>
+        <field name="margin_right">1</field>
+        <field name="dpi">70</field>
+    </record>
+
+    <record id="action_report_invoice_80mm" model="ir.actions.report">
+        <field name="name">Invoice 80mm Receipt</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hospital_invoice_80mm.invoice_80mm_template</field>
+        <field name="report_file">hospital_invoice_80mm.invoice_80mm_template</field>
+        <field name="paperformat_id" ref="paperformat_80mm"/>
+    </record>
+
+    <record id="action_report_op_ticket_receipt" model="ir.actions.report">
+    <field name="name">Consultation POS Receipt</field>
+    <field name="model">hospital.op.ticket</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">hospital_invoice_80mm..op_ticket_receipt_template</field>
+    <field name="paperformat_id" ref="hospital_invoice_80mm.paperformat_80mm"/>
+</record>
+
+</odoo>

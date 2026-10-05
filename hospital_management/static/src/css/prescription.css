@@ -1,0 +1,46 @@
+/* Wider dose input columns */
+.o_prescription_list .o_dose_cell {
+    min-width: 80px;
+    max-width: 100px;
+}
+
+/* Bigger, centered input text inside dose cells */
+.o_prescription_list .o_dose_cell input {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a6b3c;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: #f0faf4;
+    border: 1px solid #b7dfc8;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+/* Highlight on focus */
+.o_prescription_list .o_dose_cell input:focus {
+    background: #ffffff;
+    border-color: #0d6efd;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+}
+
+/* Zero value dim — subtle grey so 0.00 doesn't distract */
+.o_prescription_list .o_dose_cell input[value="0"],
+.o_prescription_list .o_dose_cell input[value="0.00"] {
+    color: #adb5bd;
+    background: #f8f9fa;
+    font-weight: 400;
+}
+
+/* Medicine column wider */
+.o_prescription_list td:first-child,
+.o_prescription_list th:first-child {
+    min-width: 200px;
+}
+
+/* Stock status coloring */
+.o_prescription_list .o_field_char[name="stockstatus"] span {
+    font-size: 12px;
+    font-weight: 500;
+}

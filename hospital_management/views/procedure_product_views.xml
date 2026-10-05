@@ -1,0 +1,87 @@
+<odoo>
+
+    <!-- ================= PROCEDURE list ================= -->
+    <record id="view_product_procedure_list" model="ir.ui.view">
+        <field name="name">product.product.procedure.list</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <list string="Procedures">
+                <field name="name"/>
+                <field name="list_price"/>
+                <field name="default_code"/>
+                <field name="categ_id"/>
+            </list>
+        </field>
+    </record>
+
+
+    <!-- ================= PROCEDURE FORM ================= -->
+    <record id="view_product_procedure_form" model="ir.ui.view">
+        <field name="name">product.product.procedure.form</field>
+        <field name="model">product.product</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+
+            <form string="Procedure">
+
+                <!-- Forced hidden settings -->
+                <field name="is_procedure" invisible="1"/>
+                <field name="type" invisible="1"/>
+                <field name="sale_ok" invisible="1"/>
+                <field name="purchase_ok" invisible="1"/>
+
+                <sheet>
+
+                    <!-- Title -->
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+
+                    <notebook>
+
+                        <!-- ONLY GENERAL TAB -->
+                        <page string="General Information">
+                            <group>
+
+                                <group>
+                                    <field name="type" widget="radio"/>
+                                    <field name="list_price" string="Sales Price"/>
+                                    <field name="categ_id" string="Category"/>
+                                    <field name="default_code" string="Reference"/>
+                                    <field name="description" string="Notes"/>
+                                </group>
+
+                            </group>
+                        </page>
+
+                    </notebook>
+
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+
+    <!-- ================= ACTION ================= -->
+    <record id="action_procedure_products" model="ir.actions.act_window">
+        <field name="name">Procedures</field>
+        <field name="res_model">product.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_product_procedure_list"/>
+        <field name="domain">[('is_procedure','=',True)]</field>
+        <field name="context">
+            {
+                'default_is_procedure': True,
+                'default_type': 'service',
+                'default_sale_ok': True,
+                'default_purchase_ok': False
+                'form_view_ref': 'hospital_management.view_product_procedure_form'
+            }
+        </field>
+    </record>
+
+
+
+</odoo>

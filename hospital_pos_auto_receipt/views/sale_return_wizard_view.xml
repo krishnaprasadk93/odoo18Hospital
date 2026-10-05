@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sale_order_return_wizard_form" model="ir.ui.view">
+        <field name="name">sale.order.return.wizard.form</field>
+        <field name="model">sale.order.return.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Return Sales Order">
+                <group>
+                    <field name="order_id" readonly="1" invisible="1"/>
+                    <field name="journal_id" options="{'no_create': True}"/>
+                </group>
+                <notebook>
+                    <page string="Products to Return">
+                       <field name="line_ids">
+                            <list editable="bottom" create="false" delete="false">
+                                 <field name="so_line_id" column_invisible="1" force_save="1"/>
+                                <!-- Add force_save="1" to these fields -->
+                                <field name="product_id" readonly="1" force_save="1"/>
+                                <field name="ordered_qty" readonly="1" force_save="1"/>
+                                <field name="return_qty"/>
+                            </list>
+                        </field>
+
+                    </page>
+                </notebook>
+                <footer>
+                    <button string="Confirm Return" name="action_process_return" type="object" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

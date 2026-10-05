@@ -1,0 +1,11 @@
+<odoo>
+<record id="ir_cron_reset_op_token" model="ir.cron">
+<field name="name">Hospital: Reset Daily OP Token</field>
+<field name="model_id" ref="model_hospital_op_ticket"/>
+<field name="state">code</field>
+<field name="code">model._reset_daily_token_sequence()</field>
+<field name="interval_number">1</field>
+<field name="interval_type">days</field>
+<field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')"/>
+</record>
+</odoo>

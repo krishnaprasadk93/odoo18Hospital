@@ -1,0 +1,49 @@
+<odoo>
+    <record id="view_hospital_pharmacy_form" model="ir.ui.view">
+        <field name="name">hospital.pharmacy.form</field>
+        <field name="model">hospital.pharmacy</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Pharmacy Name..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="warehouse_id"/>
+                            <field name="incharge_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="phone"/>
+                            <field name="email"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="address" placeholder="Full address..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hospital_pharmacy_list" model="ir.ui.view">
+        <field name="name">hospital.pharmacy.list</field>
+        <field name="model">hospital.pharmacy</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="warehouse_id"/>
+                <field name="incharge_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_hospital_pharmacy" model="ir.actions.act_window">
+        <field name="name">Pharmacies</field>
+        <field name="res_model">hospital.pharmacy</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

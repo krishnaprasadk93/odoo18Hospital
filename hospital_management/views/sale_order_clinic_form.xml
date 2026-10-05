@@ -1,0 +1,40 @@
+<odoo>
+
+<record id="sale_order_form_clinic_simple" model="ir.ui.view">
+    <field name="name">sale.order.form.clinic.simple</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+
+        <!-- Header fields -->
+        <xpath expr="//field[@name='validity_date']" position="attributes">
+                <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='l10n_in_gst_treatment']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+         <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="string">Patient</attribute>
+            </xpath>
+        <xpath expr="//field[@name='payment_term_id']" position="attributes">
+            <attribute name="invisible">1</attribute>
+        </xpath>
+<xpath expr="//field[@name='date_order']" position="attributes">
+                <attribute name="string">Date</attribute>
+            </xpath>
+        <!-- Remove Signature tab -->
+        <xpath expr="//page[@name='customer_signature']" position="replace"/>
+  <xpath expr="//page[@name='optional_products']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        <!-- Hide default Other Info tab -->
+        <xpath expr="//page[@name='other_information']" position="attributes">
+            <attribute name="invisible">1</attribute>
+        </xpath>
+
+       
+
+    </field>
+</record>
+
+</odoo>

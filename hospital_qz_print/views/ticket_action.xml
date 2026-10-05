@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_print_consultation_receipt_server" model="ir.actions.server">
+        <field name="name">🖨️ Consultation Receipt</field>
+        <field name="model_id" ref="hospital_management.model_hospital_op_ticket"/>
+        <field name="binding_model_id" ref="hospital_management.model_hospital_op_ticket"/>
+        <field name="binding_view_types">form</field>
+        <field name="state">code</field>
+        <field name="code">
+# 1. Get the Ticket Record
+ticket = record
+
+# 2. Check for Invoice
+if not ticket.consultation_invoice_id:
+    action = {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+            'title': 'No Invoice',
+            'message': 'No Consultation Invoice is linked to this ticket.',
+            'type': 'warning',
+            'sticky': False,
+        }
+    }
+else:
+    # 3. Generate Print Data from the Invoice
+    invoice = ticket.consultation_invoice_id
+
+    # Directly call the method (we know it exists)
+    escpos_str = invoice._build_escpos_invoice_at301()
+
+    # 4. Trigger the Print Action
+    action = {
+        'type': 'ir.actions.client',
+        'tag': 'hospital_qz_print',
+        'params': {
+            'escpos_raw': escpos_str,
+            'notification': {
+                'type': 'success',
+                'title': 'Reprinting',
+                'message': 'Consultation Receipt sent to printer.',
+                'sticky': False,
+            }
+        },
+    }
+        </field>
+    </record>
+
+</odoo>

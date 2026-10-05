@@ -1,0 +1,121 @@
+<odoo>
+    <!-- Inherited Sale Order Form View -->
+    <record id="view_order_form_inherit_hospital" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.hospital</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add Visit No field after Order Date -->
+            <xpath expr="//field[@name='date_order']" position="after">
+                <field name="visit_no" readonly="1" invisible="not visit_no"/>
+            </xpath>
+
+            <!-- Add Prescription Details tab after Order Lines -->
+            <xpath expr="//page[@name='order_lines']" position="after">
+                <page string="Prescription Details" name="prescription_details" invisible="not op_ticket_id">
+                    <group>
+                        <group>
+                            <field name="op_ticket_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Doctor's Prescription">
+                        <field name="prescription_ids" nolabel="1">
+                            <list decoration-info="True">
+                                <field name="medicine_id" string="Medicine"/>
+                                <field name="dosage_pattern" string="Dosage (M-A-E)"/>
+                                <field name="duration_number" string="For"/>
+                                <field name="duration_type" string="Period"/>
+                                <field name="instruction" string="When"/>
+                                <field name="quantity" string="Total Qty"/>
+                                <field name="notes" string="Instructions"/>
+                            </list>
+                        </field>
+                    </group>
+
+                    <group string="General Instructions" invisible="not prescription_note" groups="hospital_management.group_hospital_doctor" >
+                        <field name="prescription_note" nolabel="1" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- list view enhancement -->
+    <record id="view_order_list_inherit_hospital" model="ir.ui.view">
+        <field name="name">sale.order.list.inherit.hospital</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="visit_no" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_order_form_inherit_medicine" model="ir.ui.view">
+    <field name="name">sale.order.form.medicine</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+
+        <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="after">
+            <field name="lot_id"/>
+            <field name="expiry_date_only" readonly="1"/>
+        </xpath>
+
+    </field>
+</record>
+ <record id="view_sale_order_form_hide_chatter_hospital" model="ir.ui.view">
+            <field name="name">sale.order.form.hide.chatter.hospital</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+
+                <!-- Hide chatter -->
+
+                 <xpath expr="//chatter" position="attributes">
+                    <attribute name="groups">
+                        !hospital_management.group_hospital_receptionist,
+                        !hospital_management.group_hospital_doctor,
+                        !hospital_management.group_hospital_pharmacist
+                    </attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+   <record id="sale_order_partner_strict_domain" model="ir.ui.view">
+    <field name="name">sale.order.partner.strict.domain</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='partner_id']" position="attributes">
+
+            <!-- If you don't want company restriction remove this -->
+            <!-- <attribute name="domain">
+                [('company_id', '=', company_id)]
+            </attribute> -->
+
+            <attribute name="options">
+                {'no_global_search': True}
+            </attribute>
+
+        </xpath>
+    </field>
+</record>
+    <record id="view_sale_order_filter_inherit_doctor" model="ir.ui.view">
+        <field name="name">sale.order.search.doctor</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//filter[@name='salesperson']" position="after">
+                <filter name="group_by_doctor"
+                        string="Doctor"
+                        context="{'group_by': 'doctor_id'}"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

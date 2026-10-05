@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- Pharmacy User Group -->
+        <record id="group_pharmacy_user" model="res.groups">
+            <field name="name">Pharmacy User</field>
+            <field name="category_id" ref="base.module_category_inventory_inventory"/>
+            <field name="comment">Users in this group will receive low stock notifications</field>
+        </record>
+
+        <!-- Pharmacy Manager Group -->
+        <record id="group_pharmacy_manager" model="res.groups">
+            <field name="name">Pharmacy Manager</field>
+            <field name="category_id" ref="base.module_category_inventory_inventory"/>
+            <field name="implied_ids" eval="[(4, ref('group_pharmacy_user'))]"/>
+        </record>
+
+    </data>
+</odoo>

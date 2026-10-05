@@ -1,0 +1,31 @@
+<odoo>
+    <record id="view_pos_print_settings_form" model="ir.ui.view">
+        <field name="name">pos.print.settings.form</field>
+        <field name="model">pos.print.settings</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="printer_name"/>
+                    <field name="auto_print"/>
+                    <field name="bold_font"/>
+                    <field name="double_font"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+     <!-- ACTION -->
+    <record id="action_pos_print_settings" model="ir.actions.act_window">
+        <field name="name">Thermal Printer Settings</field>
+        <field name="res_model">pos.print.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- MENU -->
+    <menuitem id="menu_pos_print_settings"
+              name="Thermal Printer Settings"
+              parent="base.menu_config"
+              action="action_pos_print_settings"
+              sequence="90"/>
+</odoo>

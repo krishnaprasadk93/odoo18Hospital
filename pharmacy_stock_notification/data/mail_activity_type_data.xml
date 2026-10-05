@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Sequence for notifications -->
+        <record id="seq_pharmacy_stock_notification" model="ir.sequence">
+            <field name="name">Pharmacy Stock Notification</field>
+            <field name="code">pharmacy.stock.notification</field>
+            <field name="prefix">LSA</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+
+        <!-- Mail Activity Type for Low Stock -->
+        <record id="mail_activity_low_stock" model="mail.activity.type">
+            <field name="name">Low Stock Alert</field>
+            <field name="summary">Low Stock Alert</field>
+            <field name="delay_count">0</field>
+            <field name="delay_unit">days</field>
+            <field name="delay_from">current_date</field>
+            <field name="icon">fa-warning</field>
+        </record>
+
+    </data>
+</odoo>

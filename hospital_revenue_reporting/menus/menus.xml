@@ -1,0 +1,37 @@
+<odoo>
+
+    <!-- ========= ACTIONS FIRST ========= -->
+
+    <record id="action_hospital_revenue_wizard" model="ir.actions.act_window">
+        <field name="name">Clinic Revenue Report</field>
+        <field name="res_model">hospital.revenue.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_hospital_dashboard" model="ir.actions.act_window">
+        <field name="name">Revenue Dashboard</field>
+        <field name="res_model">hospital.revenue.dashboard</field>
+        <field name="view_mode">graph</field>
+    </record>
+
+
+    <!-- ========= MENUS AFTER ========= -->
+
+    <menuitem id="menu_hospital_reports_root"
+              name="Clinic Reports"
+              sequence="10"/>
+
+    <menuitem id="menu_hospital_revenue_report"
+              name="Revenue Reports"
+              parent="menu_hospital_reports_root"
+              action="action_hospital_revenue_wizard"
+              sequence="2"/>
+
+    <!--<menuitem id="menu_hospital_dashboard"
+              name="Revenue Dashboard"
+              parent="menu_hospital_reports_root"
+              action="action_hospital_dashboard"
+              sequence="1"/> -->
+
+</odoo>

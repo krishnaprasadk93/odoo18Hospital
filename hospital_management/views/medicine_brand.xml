@@ -1,0 +1,56 @@
+<odoo>
+    <record id="view_medicine_brand_form" model="ir.ui.view">
+        <field name="name">medicine.brand.form</field>
+        <field name="model">medicine.brand</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Brand Name..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="manufacturer"/>
+                        </group>
+                        <group>
+                            <field name="country_id"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Products">
+                            <field name="product_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="generic_name"/>
+                                    <field name="dosage"/>
+                                    <field name="list_price"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_medicine_brand_list" model="ir.ui.view">
+        <field name="name">medicine.brand.list</field>
+        <field name="model">medicine.brand</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="manufacturer"/>
+                <field name="country_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_medicine_brand" model="ir.actions.act_window">
+        <field name="name">Medicine Brands</field>
+        <field name="res_model">medicine.brand</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

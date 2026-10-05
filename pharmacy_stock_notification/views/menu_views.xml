@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Action -->
+    <record id="action_pharmacy_stock_notification" model="ir.actions.act_window">
+        <field name="name">Low Stock Alerts</field>
+        <field name="res_model">pharmacy.stock.notification</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No low stock alerts yet!
+            </p>
+            <p>
+                Low stock alerts will appear here when products fall below their minimum quantity.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item under Inventory -->
+    <menuitem id="menu_pharmacy_stock_notification"
+              name="Low Stock Alerts"
+              parent="stock.menu_stock_root"
+              action="action_pharmacy_stock_notification"
+              sequence="99"
+              groups="pharmacy_stock_notification.group_pharmacy_user"/>
+
+</odoo>

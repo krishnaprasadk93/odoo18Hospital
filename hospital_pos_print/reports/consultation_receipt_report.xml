@@ -1,0 +1,86 @@
+<odoo>
+    <!-- Report Action -->
+    <record id="action_report_consultation_receipt" model="ir.actions.report">
+        <field name="name">Consultation Receipt</field>
+        <field name="model">hospital.op.ticket</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hospital_pos_print.report_consultation_receipt</field>
+        <field name="report_file">hospital_pos_print.report_consultation_receipt</field>
+        <field name="paperformat_id" ref="paperformat_consultation_receipt"/>
+        <field name="binding_model_id" ref="hospital_management.model_hospital_op_ticket"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- QWeb Template -->
+    <template id="report_consultation_receipt">
+<t t-call="web.html_container">
+<t t-foreach="docs" t-as="o">
+
+<div style="width:76mm; font-family:monospace; font-size:11px;">
+
+<!-- Logo -->
+<t t-if="o.env.company.logo">
+<div style="text-align:center;">
+<img t-att-src="image_data_uri(o.env.company.logo)"
+     style="max-height:55px; max-width:65mm;"/>
+</div>
+</t>
+
+<div style="text-align:center;">
+<b><span t-field="o.env.company.name"/></b><br/>
+<span t-field="o.env.company.phone"/>
+</div>
+
+
+<hr/>
+
+<center><b>CONSULTATION RECEIPT</b></center>
+<hr/>
+
+Date     : <span t-field="o.create_date"/><br/>
+Visit No : <span t-field="o.visit_no"/><br/>
+Token No : <b><span t-field="o.token_number"/></b><br/>
+
+<hr/>
+
+Patient  : <span t-field="o.patient_id.name"/><br/>
+Pat. ID  : <span t-field="o.patient_id.patient_seq"/><br/>
+Doctor   : <span t-field="o.doctor_id.name"/>
+
+<hr/>
+
+Consultation Fee
+<span style="float:right;"
+      t-field="o.consultation_fee"
+     t-options='{"widget": "monetary", "display_currency": o.env.company.currency_id}'/>
+
+
+<hr/>
+
+<b>Payments</b><br/>
+<t t-if="o.consultation_invoice_id and o.consultation_invoice_id.payment_state == 'paid'">
+<t t-foreach="o.consultation_invoice_id._get_reconciled_payments()" t-as="payment">
+<t t-esc="payment.journal_id.name"/>
+<span style="float:right;">
+<t t-esc="payment.amount"/>
+</span><br/>
+</t>
+</t>
+<t t-else="">Unpaid</t>
+
+<hr/>
+
+<center>
+<t t-if="o.draft_state == 'paid'">PAID</t>
+<t t-else="">PENDING</t>
+</center>
+
+<hr/>
+<center>*** Get Well Soon ***</center>
+
+</div>
+</t>
+</t>
+</template>
+
+</odoo>
