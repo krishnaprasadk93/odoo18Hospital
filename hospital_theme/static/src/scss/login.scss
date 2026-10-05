@@ -1,0 +1,66 @@
+// Branded login page (web.login_layout, see views/login_templates.xml).
+.o_hospital_login {
+    background: #f4f7f7 !important;
+
+    .o_hospital_login_wrap {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(320px, 5fr) 7fr;
+    }
+
+    .o_hospital_login_brand {
+        background: linear-gradient(160deg, #115e59 0%, #0f766e 55%, #0e7490 100%);
+        color: #ffffff;
+        padding: 56px 48px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+    }
+    .o_hospital_login_mark {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.14);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
+    .o_hospital_login_name { font-size: 30px; font-weight: 700; margin: 6px 0 0; color: #ffffff; }
+    .o_hospital_login_tagline { font-size: 16px; opacity: .9; max-width: 380px; margin: 0; }
+    .o_hospital_login_points {
+        list-style: none;
+        padding: 0;
+        margin: 16px 0 0;
+        display: grid;
+        gap: 10px;
+        font-size: 14px;
+        li { display: flex; align-items: center; gap: 10px; opacity: .92; }
+        .fa { width: 18px; text-align: center; }
+    }
+
+    .o_hospital_login_main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+        > .container { padding: 0 !important; }
+        .card {
+            max-width: 380px !important;
+            background: #ffffff !important;
+            border-radius: 14px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.08);
+        }
+        .card-body { padding: 32px; }
+        .btn-primary { border-radius: 8px; padding: .55rem 1rem; font-weight: 600; }
+        .form-control { border-radius: 8px; }
+    }
+
+    @media (max-width: 767.98px) {
+        .o_hospital_login_wrap { grid-template-columns: 1fr; }
+        .o_hospital_login_brand { padding: 28px 20px; gap: 8px; }
+        .o_hospital_login_points { display: none; }
+        .o_hospital_login_name { font-size: 22px; }
+    }
+}
