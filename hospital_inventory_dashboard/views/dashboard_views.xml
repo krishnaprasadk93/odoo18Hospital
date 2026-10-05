@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_hospital_inventory_dashboard" model="ir.actions.client">
+        <field name="name">Inventory Dashboard</field>
+        <field name="tag">hospital_inventory_dashboard</field>
+    </record>
+
+    <!-- Pharmacists and Inventory administrators only: the menu is restricted
+         here and the data endpoint checks the groups again server side. -->
+    <menuitem id="menu_hospital_inventory_dashboard"
+              name="Inventory Dashboard"
+              parent="hospital_management.menu_pharmacy_root"
+              action="action_hospital_inventory_dashboard"
+              groups="hospital_management.group_hospital_pharmacist,stock.group_stock_manager"
+              sequence="1"/>
+</odoo>
