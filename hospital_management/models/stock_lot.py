@@ -21,6 +21,20 @@ class StockLot(models.Model):
         string="Available Quantity",
         compute="_compute_available_qty"
     )
+    expiry_state = fields.Selection([
+        ('expired', 'Expired'),
+        ('soon', 'Expiring soon'),
+        ('ok', 'OK'),
+    ], string="Expiry Status", compute="_compute_expiry_state")
+    expiry_date_only = fields.Date(string="Expiry", compute="_compute_expiry_state")
+
+    @api.depends('expiration_date')
+    def _compute_expiry_state(self):
+        Product = self.env['product.product']
+        for lot in self:
+            expiry = fields.Date.context_today(lot, lot.expiration_date) if lot.expiration_date else False
+            lot.expiry_date_only = expiry
+            lot.expiry_state = Product._expiry_state_for(expiry)
 
     # ====================================
     # Margin Calculation

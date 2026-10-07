@@ -3,23 +3,66 @@
         <field name="name">split.payment.wizard.form</field>
         <field name="model">split.payment.wizard</field>
         <field name="arch" type="xml">
-            <form string="Split Payment and Invoice">
-                <group>
-                    <field name="sale_id" readonly="1"/>
-                    <field name="amount_total" readonly="1"/>
-                </group>
-                <group string="Payment Split" col="2">
-                    <field name="cash_journal_id"/>
-                    <field name="cash_amount"/>
-                    <field name="card_journal_id"/>
-                    <field name="card_amount"/>
-                    <field name="upi_journal_id"/>
-                    <field name="upi_amount"/>
-                </group>
-                <group string="Cash Received" col="2">
-                    <field name="amount_given"/>
-                    <field name="balance_amount"/>
-                </group>
+            <form string="Split Payment and Invoice" class="o_hc_pay">
+                <field name="sale_id" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="amount_paid" invisible="1"/>
+
+                <!-- Total due -->
+                <div class="o_hc_pay_total">
+                    <div class="o_hc_pay_total_label">Amount to collect</div>
+                    <field name="amount_total" readonly="1" class="o_hc_pay_total_value"/>
+                    <div class="o_hc_pay_who">
+                        <field name="partner_name" class="oe_inline"/>
+                    </div>
+                </div>
+
+                <!-- Payment tiles -->
+                <div class="o_hc_pay_tiles">
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-money" title="Cash"/> Cash</div>
+                        <field name="cash_amount" class="o_hc_pay_amount"/>
+                        <field name="cash_journal_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="Cash journal"/>
+                    </div>
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-credit-card" title="Card"/> Card</div>
+                        <field name="card_amount" class="o_hc_pay_amount"/>
+                        <field name="card_journal_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="Card journal"/>
+                    </div>
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-mobile" title="UPI"/> UPI</div>
+                        <field name="upi_amount" class="o_hc_pay_amount"/>
+                        <field name="upi_journal_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="UPI journal"/>
+                    </div>
+                </div>
+
+                <!-- Live check of the split -->
+                <div class="o_hc_pay_status o_hc_pay_ok" invisible="amount_remaining &gt; 0.005 or amount_remaining &lt; -0.005">
+                    <i class="fa fa-check-circle" title="Matches"/> Split matches the total
+                </div>
+                <div class="o_hc_pay_status o_hc_pay_due" invisible="amount_remaining &lt;= 0.005">
+                    <i class="fa fa-exclamation-circle" title="Remaining"/> Remaining
+                    <field name="amount_remaining" class="oe_inline"/>
+                </div>
+                <div class="o_hc_pay_status o_hc_pay_over" invisible="amount_remaining &gt;= -0.005">
+                    <i class="fa fa-exclamation-triangle" title="Over"/> Split is more than the total
+                </div>
+
+                <!-- Cash handed over and change -->
+                <div class="o_hc_pay_cash" invisible="not cash_amount">
+                    <div>
+                        <label for="amount_given" string="Cash given by customer"/>
+                        <field name="amount_given" class="o_hc_pay_amount"/>
+                    </div>
+                    <div class="o_hc_pay_change">
+                        <div class="o_hc_pay_total_label">Change to return</div>
+                        <field name="balance_amount" class="o_hc_pay_change_value"/>
+                    </div>
+                </div>
+
                 <footer>
                     <button name="action_create_invoice_payment" type="object" string="Create Invoice and Pay" class="btn-primary"/>
                     <button string="Cancel" special="cancel"/>

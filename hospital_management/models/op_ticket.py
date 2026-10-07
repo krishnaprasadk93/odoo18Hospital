@@ -1,5 +1,7 @@
 from datetime import timedelta, datetime, time
 
+import pytz
+
 from odoo import models, fields, api, _, exceptions
 from odoo.exceptions import UserError
 
@@ -134,6 +136,12 @@ class HospitalOpTicket(models.Model):
     doctor_name = fields.Char(related='doctor_id.name', string='Doctor Name')
     appointment_time_text = fields.Char(string='Time', compute='_compute_appointment_time_text')
     waiting_text = fields.Char(string='Waiting', compute='_compute_waiting_text')
+    prescription_count = fields.Integer(string='Medicines', compute='_compute_pharmacy_status')
+    pharmacy_stock_status = fields.Selection([
+        ('ready', 'Ready'),
+        ('low', 'Low stock'),
+        ('none', 'No medicines'),
+    ], string='Stock', compute='_compute_pharmacy_status')
 
     # hospital.op.ticket model
     has_previous_prescription = fields.Boolean(
@@ -648,6 +656,64 @@ class HospitalOpTicket(models.Model):
                 continue
             hours, mins = divmod(minutes, 60)
             rec.waiting_text = _('%(h)s h %(m)s min', h=hours, m=mins) if hours else _('%s min', mins)
+
+    @api.depends('prescription_ids', 'prescription_ids.is_out_of_stock')
+    def _compute_pharmacy_status(self):
+        for rec in self:
+            lines = rec.prescription_ids
+            rec.prescription_count = len(lines)
+            if not lines:
+                rec.pharmacy_stock_status = 'none'
+            elif any(lines.mapped('is_out_of_stock')):
+                rec.pharmacy_stock_status = 'low'
+            else:
+                rec.pharmacy_stock_status = 'ready'
+
+    @api.model
+    def get_clinic_home_data(self):
+        """ Live counts for the Clinic home tiles, limited to the menus the user can open. """
+        user = self.env.user
+        tz_today = fields.Date.context_today(self)
+        start = fields.Datetime.context_timestamp(self, fields.Datetime.now()).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        start_utc = start.astimezone(pytz.utc).replace(tzinfo=None)
+        today = [('appointment_date', '>=', start_utc),
+                 ('appointment_date', '<', start_utc + timedelta(days=1))]
+        active = [('state', 'not in', ('done', 'cancelled'))]
+        tiles = []
+        if user.has_group('hospital_management.group_hospital_receptionist'):
+            tiles += [
+                {'key': 'queue', 'label': _("Today's Queue"), 'icon': 'fa-th-large',
+                 'count': self.search_count(today + active),
+                 'hint': _('in the clinic now · %s visits today',
+                           self.search_count(today + [('state', '!=', 'cancelled')])),
+                 'action': 'hospital_management.action_reception_queue'},
+                {'key': 'register', 'label': _('Register Patient'), 'icon': 'fa-user-plus',
+                 'count': self.env['hospital.patient'].search_count([('create_date', '>=', start_utc)]),
+                 'hint': _('new patients today'),
+                 'action': 'hospital_management.action_hospital_patient', 'new': True},
+            ]
+        if user.has_group('hospital_management.group_hospital_doctor'):
+            mine = [('doctor_id.user_id', '=', user.id)]
+            tiles.append({
+                'key': 'my_queue', 'label': _('My Queue'), 'icon': 'fa-stethoscope',
+                'count': self.search_count(today + mine + [('state', 'in', ('op', 'consulting'))]),
+                'hint': _('waiting or in consultation'),
+                'action': 'hospital_management.action_doctor_queue'})
+        if user.has_group('hospital_management.group_hospital_pharmacist'):
+            tiles.append({
+                'key': 'pharmacy', 'label': _('Pharmacy Queue'), 'icon': 'fa-medkit',
+                'count': self.search_count([('state', '=', 'pharmacy')]),
+                'hint': _('prescriptions to dispense'),
+                'action': 'hospital_management.action_pharmacy_dashboard'})
+            low = self.env['product.product'].search_count(
+                [('is_medicine', '=', True), ('stock_level', 'in', ['out', 'low'])])
+            tiles.append({
+                'key': 'stock', 'label': _('Low Stock'), 'icon': 'fa-cubes', 'alert': low > 0,
+                'count': low, 'hint': _('medicines out of stock or low'),
+                'action': 'hospital_management.action_medicine_products',
+                'context': {'search_default_filter_low_stock': 1, 'search_default_filter_out_of_stock': 1}})
+        return {'tiles': tiles, 'date': fields.Date.to_string(tz_today), 'user': user.name}
 
     @api.model
     def _expand_states(self, states, domain):

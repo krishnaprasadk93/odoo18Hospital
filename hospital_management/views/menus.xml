@@ -1,11 +1,21 @@
 <odoo>
-    <menuitem id="menu_hospital_root" name="Clinic"/>
+    <!-- Clinic home: quick tiles with live counts, opened when the app is clicked -->
+    <record id="action_clinic_home" model="ir.actions.client">
+        <field name="name">Clinic</field>
+        <field name="tag">hospital_clinic_home</field>
+    </record>
+
+    <menuitem id="menu_hospital_root" name="Clinic" action="action_clinic_home"/>
 
     <record id="action_reception_dashboard" model="ir.actions.act_window">
         <field name="name">Appointments</field>
         <field name="res_model">hospital.op.ticket</field>
         <field name="view_mode">list,form</field>
         <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No appointments here</p>
+            <p>Click <b>New</b> to register a visit: pick the patient and doctor, then collect the fee and generate a token.</p>
+        </field>
     </record>
     <record id="action_consultation_payment_wizard" model="ir.actions.act_window">
         <field name="name">Process Payment</field>
@@ -29,6 +39,10 @@
         <field name="res_model">hospital.op.ticket</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No visits today yet</p>
+            <p>Click <b>New</b> to register the first patient of the day. Their card moves across the board as they see the doctor and the pharmacy.</p>
+        </field>
     </record>
 
     <menuitem id="menu_reception_queue" name="Today's Queue" parent="menu_reception_root" action="action_reception_queue" sequence="1"/>
@@ -41,6 +55,10 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('doctor_id.user_id', '=', uid)]</field>
         <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No consultations for you</p>
+            <p>Patients appear here once reception generates a token for you.</p>
+        </field>
     </record>
 
     <menuitem id="menu_doctor_root" name="Doctor" parent="menu_hospital_root" sequence="20" groups="group_hospital_doctor"/>
@@ -50,6 +68,10 @@
         <field name="view_mode">kanban,list,form</field>
         <field name="domain">[('doctor_id.user_id', '=', uid)]</field>
         <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Your queue is empty</p>
+            <p>Patients appear here once reception generates a token for you.</p>
+        </field>
     </record>
 
     <menuitem id="menu_doctor_queue" name="My Queue" parent="menu_doctor_root" action="action_doctor_queue" sequence="1"/>
@@ -58,8 +80,16 @@
     <record id="action_pharmacy_dashboard" model="ir.actions.act_window">
         <field name="name">Pharmacy Queue</field>
         <field name="res_model">hospital.op.ticket</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_hospital_op_ticket_pharmacy_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_hospital_op_ticket_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_hospital_op_ticket_form')})]"/>
         <field name="domain">[('state', '=', 'pharmacy')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Pharmacy queue is clear</p>
+            <p>Prescriptions appear here as soon as a doctor completes a consultation.</p>
+        </field>
     </record>
 
     <menuitem id="menu_pharmacy_root" name="Pharmacy" parent="menu_hospital_root" sequence="30" groups="group_hospital_pharmacist"/>

@@ -118,4 +118,34 @@
 
         </field>
     </record>
+    <!-- Clinic visit card on pharmacy orders created from a visit -->
+    <record id="sale_order_form_visit_card" model="ir.ui.view">
+        <field name="name">sale.order.form.visit.card</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <div class="o_hc_so_visit" invisible="not op_ticket_id">
+                    <div class="o_hc_token" invisible="not op_token_number">
+                        <span class="o_hc_token_label">Token</span>
+                        <field name="op_token_number"/>
+                    </div>
+                    <div class="o_hc_chips">
+                        <span class="o_hc_chip">
+                            <i class="fa fa-stethoscope" title="Visit"/>
+                            <field name="op_ticket_id" readonly="1" class="oe_inline"/>
+                        </span>
+                        <span class="o_hc_chip" invisible="not op_patient_summary">
+                            <i class="fa fa-user-o" title="Patient"/>
+                            <field name="op_patient_summary" class="oe_inline"/>
+                        </span>
+                        <span class="o_hc_chip" invisible="not doctor_id">
+                            <i class="fa fa-user-md" title="Doctor"/>
+                            <field name="doctor_id" readonly="1" class="oe_inline" options="{'no_open': True}"/>
+                        </span>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
 </odoo>

@@ -20,6 +20,13 @@ class ConsultationPaymentWizard(models.TransientModel):
     journal_upi_id = fields.Many2one('account.journal', string='UPI Journal', domain=[('type', '=', 'bank')])
     amount_upi = fields.Float(string='UPI Amount')
 
+    # Display helpers for the payment popup.
+    currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
+    patient_name = fields.Char(related='op_ticket_id.patient_id.name', string='Patient')
+    doctor_name = fields.Char(related='op_ticket_id.doctor_id.name', string='Doctor')
+    amount_paid = fields.Float(string='Split Total', compute='_compute_amount_remaining')
+    amount_remaining = fields.Float(string='Remaining', compute='_compute_amount_remaining')
+
     amount_given = fields.Float(
         string='Amount Given by Customer',
         help='Cash amount physically handed over by the customer.'
@@ -36,6 +43,12 @@ class ConsultationPaymentWizard(models.TransientModel):
         if 'amount_given' in fields_list and not res.get('amount_given'):
             res['amount_given'] = res.get('amount_cash', 0.0)
         return res
+
+    @api.depends('amount_total', 'amount_cash', 'amount_card', 'amount_upi')
+    def _compute_amount_remaining(self):
+        for rec in self:
+            rec.amount_paid = (rec.amount_cash or 0.0) + (rec.amount_card or 0.0) + (rec.amount_upi or 0.0)
+            rec.amount_remaining = (rec.amount_total or 0.0) - rec.amount_paid
 
     @api.depends('amount_given', 'amount_cash')
     def _compute_balance_amount(self):

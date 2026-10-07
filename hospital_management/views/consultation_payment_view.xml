@@ -3,35 +3,70 @@
         <field name="name">consultation.payment.wizard.form</field>
         <field name="model">consultation.payment.wizard</field>
         <field name="arch" type="xml">
-            <form string="Consultation Payment">
-                <sheet>
-                    <group>
-                        <field name="op_ticket_id" readonly="1"/>
-                        <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                    </group>
-                    <group string="Payment Split">
-                        <group>
-                            <field name="journal_cash_id"/>
-                            <field name="amount_cash"/>
-                        </group>
-                        <group>
-                            <field name="journal_card_id"/>
-                            <field name="amount_card"/>
-                        </group>
-                        <group>
-                            <field name="journal_upi_id"/>
-                            <field name="amount_upi"/>
-                        </group>
-                    </group>
-                    <group string="Cash Received">
-                        <group>
-                            <field name="amount_given"/>
-                        </group>
-                        <group>
-                            <field name="balance_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                        </group>
-                    </group>
-                </sheet>
+            <form string="Consultation Payment" class="o_hc_pay">
+                <field name="op_ticket_id" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="amount_paid" invisible="1"/>
+
+                <!-- Total due -->
+                <div class="o_hc_pay_total">
+                    <div class="o_hc_pay_total_label">Consultation fee</div>
+                    <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"
+                           class="o_hc_pay_total_value"/>
+                    <div class="o_hc_pay_who">
+                        <field name="patient_name" class="oe_inline"/>
+                        <span invisible="not doctor_name"> · </span>
+                        <field name="doctor_name" class="oe_inline"/>
+                    </div>
+                </div>
+
+                <!-- Payment tiles -->
+                <div class="o_hc_pay_tiles">
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-money" title="Cash"/> Cash</div>
+                        <field name="amount_cash" class="o_hc_pay_amount"/>
+                        <field name="journal_cash_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="Cash journal"/>
+                    </div>
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-credit-card" title="Card"/> Card</div>
+                        <field name="amount_card" class="o_hc_pay_amount"/>
+                        <field name="journal_card_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="Card journal"/>
+                    </div>
+                    <div class="o_hc_pay_tile">
+                        <div class="o_hc_pay_tile_head"><i class="fa fa-mobile" title="UPI"/> UPI</div>
+                        <field name="amount_upi" class="o_hc_pay_amount"/>
+                        <field name="journal_upi_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
+                               placeholder="UPI journal"/>
+                    </div>
+                </div>
+
+                <!-- Live check of the split -->
+                <div class="o_hc_pay_status o_hc_pay_ok" invisible="amount_remaining &gt; 0.005 or amount_remaining &lt; -0.005">
+                    <i class="fa fa-check-circle" title="Matches"/> Split matches the total
+                </div>
+                <div class="o_hc_pay_status o_hc_pay_due" invisible="amount_remaining &lt;= 0.005">
+                    <i class="fa fa-exclamation-circle" title="Remaining"/> Remaining
+                    <field name="amount_remaining" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+                </div>
+                <div class="o_hc_pay_status o_hc_pay_over" invisible="amount_remaining &gt;= -0.005">
+                    <i class="fa fa-exclamation-triangle" title="Over"/> Split is more than the total
+                </div>
+
+                <!-- Cash handed over and change -->
+                <div class="o_hc_pay_cash" invisible="not amount_cash">
+                    <div>
+                        <label for="amount_given" string="Cash given by patient"/>
+                        <field name="amount_given" class="o_hc_pay_amount"/>
+                    </div>
+                    <div class="o_hc_pay_change">
+                        <div class="o_hc_pay_total_label">Change to return</div>
+                        <field name="balance_amount" widget="monetary" options="{'currency_field': 'currency_id'}"
+                               class="o_hc_pay_change_value"/>
+                    </div>
+                </div>
+
                 <footer>
                     <button name="action_process_payment" string="Create Invoice &amp; Pay" type="object" class="btn-primary"/>
                     <button string="Cancel" class="btn-secondary" special="cancel"/>

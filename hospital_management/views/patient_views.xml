@@ -205,5 +205,9 @@
         <field name="name">Patients</field>
         <field name="res_model">hospital.patient</field>
         <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No patients yet</p>
+            <p>Click <b>New</b> to register a patient. Only a name and phone number are needed to start.</p>
+        </field>
     </record>
 </odoo>

@@ -418,6 +418,52 @@
         </field>
     </record>
 
+    <!-- Pharmacy queue: one card per prescription to dispense -->
+    <record id="view_hospital_op_ticket_pharmacy_kanban" model="ir.ui.view">
+        <field name="name">hospital.op.ticket.pharmacy.kanban</field>
+        <field name="model">hospital.op.ticket</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <kanban default_order="appointment_date" class="o_hc_queue o_hc_pharmacy_queue"
+                    quick_create="0" create="0" sample="1">
+                <field name="token_number"/>
+                <field name="pharmacy_stock_status"/>
+                <templates>
+                    <t t-name="card" class="o_hc_queue_card">
+                        <div class="d-flex align-items-start gap-2">
+                            <div class="o_hc_queue_token">
+                                <field name="token_number" t-if="record.token_number.raw_value"/>
+                                <span t-else="" class="text-muted">—</span>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <field name="patient_name" class="fw-bold text-truncate d-block"/>
+                                <div class="small text-muted text-truncate">
+                                    <i class="fa fa-user-md me-1" title="Doctor"/>
+                                    <field name="doctor_name"/>
+                                </div>
+                            </div>
+                            <field name="pharmacy_stock_status" widget="badge"
+                                   decoration-success="pharmacy_stock_status == 'ready'"
+                                   decoration-danger="pharmacy_stock_status == 'low'"/>
+                        </div>
+                        <footer class="pt-2 small">
+                            <span class="o_hc_med_count">
+                                <i class="fa fa-medkit me-1" title="Medicines"/>
+                                <field name="prescription_count"/> medicines
+                            </span>
+                            <field name="pharmacy_state" class="text-muted ms-2"/>
+                            <span class="ms-auto o_hc_wait" t-if="record.waiting_text.raw_value"
+                                  title="Time since appointment">
+                                <i class="fa fa-hourglass-half me-1"/>
+                                <field name="waiting_text"/>
+                            </span>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="view_op_ticket_popup_list" model="ir.ui.view">
     <field name="name">hospital.op.ticket.popup.list</field>
     <field name="model">hospital.op.ticket</field>
