@@ -3,7 +3,7 @@
     --hd-critical: #d03b3b;
     --hd-warning-ink: #8a5a00;
 
-    &.o_hi_fullscreen .o_hd_scroll { padding: 24px 32px; }
+    &.o_hi_fullscreen .o_hd_scroll { padding: 0 32px 24px; }
 
     .o_hi_header_actions { display: flex; align-items: center; gap: 8px; }
 

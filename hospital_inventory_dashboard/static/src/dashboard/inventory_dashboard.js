@@ -12,8 +12,12 @@ import {
     SERIES,
     barDataset,
     baseOptions,
+    bucketRange,
+    nextDay,
+    periodLabel,
     presetRange,
-} from "@hospital_doctor_dashboard/dashboard/doctor_dashboard";
+    utcStartOfDay,
+} from "@hospital_doctor_dashboard/dashboard/chart_utils";
 
 const STATUS = {
     in_stock: { color: "#0ca30c", icon: "fa-check-circle" },
@@ -189,6 +193,87 @@ export class InventoryDashboard extends Component {
         });
     }
 
+    // ---------------- Click-through to the records behind a bar
+    canOpen(model) {
+        return Boolean((this.state.options.drill || {})[model]);
+    }
+
+    async openList(name, model, domain) {
+        if (!this.canOpen(model)) {
+            return;
+        }
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        }
+        await this.action.doAction({
+            type: "ir.actions.act_window",
+            name,
+            res_model: model,
+            domain,
+            context: { create: false },
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+        });
+    }
+
+    get periodText() {
+        const p = this.state.data && this.state.data.period;
+        return p ? periodLabel(p.date_from, p.date_to) : "";
+    }
+
+    /** Products in the dashboard scope (medicines or all stocked products). */
+    get productScope() {
+        return this.state.scope === "medicine" ? [["product_id.is_medicine", "=", true]] : [["product_id.is_storable", "=", true]];
+    }
+
+    movesDomain([from, to], extra) {
+        return [
+            ["state", "=", "done"],
+            ["date", ">=", utcStartOfDay(from)],
+            ["date", "<", utcStartOfDay(to)],
+            ...this.productScope,
+            ...extra,
+        ];
+    }
+
+    openMovement(index, datasetIndex) {
+        const data = this.state.data;
+        const locs = data.location_ids;
+        const range = bucketRange(data.movements.starts, index, this.state.dateFrom, this.state.dateTo);
+        const received = datasetIndex === 0;
+        const extra = received
+            ? [["location_dest_id", "in", locs], ["location_id", "not in", locs]]
+            : [["location_id", "in", locs], ["location_dest_id", "not in", locs]];
+        return this.openList(`${received ? "Received" : "Issued"}: ${data.movements.labels[index]}`, "stock.move",
+            this.movesDomain(range, extra));
+    }
+
+    openIssued(row) {
+        const locs = this.state.data.location_ids;
+        return this.openList(`Issued: ${row.name}`, "stock.move", this.movesDomain(
+            [this.state.dateFrom, nextDay(this.state.dateTo)],
+            [["product_id", "=", row.id], ["location_id", "in", locs], ["location_dest_id.usage", "=", "customer"]]));
+    }
+
+    openExpiry(bucket) {
+        // Expiry dates are compared as UTC days, like the server buckets.
+        const domain = [["location_id", "in", this.state.data.location_ids], ["quantity", ">", 0], ...this.productScope,
+            ["lot_id", "!=", false]];
+        if (bucket.exp_from) {
+            domain.push(["lot_id.expiration_date", ">=", `${bucket.exp_from} 00:00:00`]);
+        }
+        if (bucket.exp_to) {
+            domain.push(["lot_id.expiration_date", "<", `${nextDay(bucket.exp_to)} 00:00:00`]);
+        }
+        return this.openList(`Batches: ${bucket.label}`, "stock.quant", domain);
+    }
+
+    openValueGroup(row) {
+        const scope = this.state.scope === "medicine" ? [["is_medicine", "=", true]] : [];
+        return this.openList(`Products: ${row.name}`, "product.template",
+            [["is_storable", "=", true], ...scope, ...row.domain]);
+    }
+
     async openPendingDeliveries() {
         if (document.fullscreenElement) {
             await document.exitFullscreen();
@@ -257,7 +342,8 @@ export class InventoryDashboard extends Component {
     get kpiTiles() {
         const k = this.state.data.kpis;
         return [
-            { key: "value", label: "Stock value", value: this.money(k.stock_value), hint: "On hand × cost" },
+            { key: "value", label: "Stock value", value: this.money(k.stock_value, true), title: this.money(k.stock_value),
+              hint: "On hand × cost" },
             { key: "products", label: "Products in stock", value: `${this.qty(k.in_stock + k.low)} / ${this.qty(k.products)}`,
               hint: "With positive stock" },
             { key: "no_batch", label: "Without batch", value: this.qty(k.no_batch), list: "no_batch",
@@ -319,11 +405,19 @@ export class InventoryDashboard extends Component {
                     barDataset("Issued", data.movements.issued, SERIES[1]),
                 ],
             },
-            options: baseOptions({ format: qty }),
+            options: baseOptions({
+                format: qty,
+                onBarClick: this.canOpen("stock.move") ? (i, ds) => this.openMovement(i, ds) : undefined,
+            }),
         });
 
         charts.expiry = () => {
-            const options = baseOptions({ format: money, tickFormat: moneyShort });
+            const options = baseOptions({
+                format: money,
+                tickFormat: moneyShort,
+                onBarClick: this.canOpen("stock.quant") ? (i) => this.openExpiry(data.expiry_chart[i]) : undefined,
+                canClick: (i) => data.expiry_chart[i].lots > 0,
+            });
             options.plugins.tooltip.callbacks.afterLabel = (ctx) => {
                 const bucket = data.expiry_chart[ctx.dataIndex];
                 return ` ${bucket.lots} batches · ${qty(bucket.qty)} units`;
@@ -348,11 +442,21 @@ export class InventoryDashboard extends Component {
                 labels: data.issued_top.map((r) => r.name),
                 datasets: [barDataset("Issued", data.issued_top.map((r) => r.qty), SERIES[0], { maxBarThickness: 20 })],
             },
-            options: baseOptions({ horizontal: true, format: qty }),
+            options: baseOptions({
+                horizontal: true,
+                format: qty,
+                onBarClick: this.canOpen("stock.move") ? (i) => this.openIssued(data.issued_top[i]) : undefined,
+            }),
         });
 
         charts.value = () => {
-            const options = baseOptions({ horizontal: true, format: money, tickFormat: moneyShort });
+            const options = baseOptions({
+                horizontal: true,
+                format: money,
+                tickFormat: moneyShort,
+                onBarClick: this.canOpen("product.template") ? (i) => this.openValueGroup(data.value_groups[i]) : undefined,
+                canClick: (i) => Boolean(data.value_groups[i] && data.value_groups[i].domain),
+            });
             options.layout.padding.right = 90;
             options.plugins.hdBarEndLabels.format = moneyShort;
             return {

@@ -31,6 +31,19 @@ class HospitalDashboardMixin(models.AbstractModel):
                 return ids
         return [c for c in self.env.companies.ids if c in allowed] or [self.env.company.id]
 
+    def _drill_access(self, model_names):
+        """ {model: bool}: whether the user may open these records (the
+        dashboards read data with sudo, but click-through opens normal views). """
+        access = {}
+        for name in model_names:
+            if name not in self.env:
+                access[name] = False
+                continue
+            model = self.env[name]
+            check = getattr(model, 'has_access', None)
+            access[name] = bool(check('read')) if check else model.check_access_rights('read', raise_exception=False)
+        return access
+
     # ------------------------------------------------------------------
     # Dates
     # ------------------------------------------------------------------
@@ -93,6 +106,11 @@ class HospitalDashboardMixin(models.AbstractModel):
             else:
                 day = (day.replace(day=28) + timedelta(days=4)).replace(day=1)
         return keys
+
+    @staticmethod
+    def _bucket_starts(keys):
+        """ ISO start date of each bucket (the client turns a clicked bar into a date range). """
+        return [fields.Date.to_string(k) for k in keys]
 
     @staticmethod
     def _bucket_label(day, kind):

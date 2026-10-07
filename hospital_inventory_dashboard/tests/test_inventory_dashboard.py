@@ -85,6 +85,14 @@ class TestInventoryDashboard(TransactionCase):
         buckets = {b['key']: b for b in data['expiry_chart']}
         self.assertGreaterEqual(buckets['expired']['qty'], 2)
         self.assertGreaterEqual(buckets['30']['qty'], 6)
+        # Click-through date bounds: expired ends yesterday, "<= 30 days" starts today.
+        today = fields.Date.today()
+        self.assertEqual(buckets['expired']['exp_to'], fields.Date.to_string(today - timedelta(days=1)))
+        self.assertFalse(buckets['expired']['exp_from'])
+        self.assertEqual(buckets['30']['exp_from'], fields.Date.to_string(today))
+        self.assertEqual(buckets['60']['exp_from'], fields.Date.to_string(today + timedelta(days=31)))
+        self.assertFalse(buckets['later']['exp_to'])
+        self.assertEqual(data['location_ids'] and True, True)
         self.assertEqual(self._names(data, 'negative')['INV Negative']['qty'], -3)
         low = self._names(data, 'low')
         self.assertEqual(low['INV Low']['status'], 'low')

@@ -16,7 +16,10 @@ class HospitalSalesDashboard(models.AbstractModel):
     @api.model
     def get_filter_options(self):
         self._check_doctor_access()
-        return {'currency_id': self.env.company.currency_id.id}
+        return {
+            'currency_id': self.env.company.currency_id.id,
+            'drill': self._drill_access(['sale.order', 'account.payment', 'account.move']),
+        }
 
     @api.model
     def get_dashboard_data(self, date_from, date_to, order_type='all'):
@@ -108,6 +111,7 @@ class HospitalSalesDashboard(models.AbstractModel):
             (op if order['is_op'] else otc)[bucket] += order['amount']
         return {
             'labels': [self._bucket_label(k, kind) for k in keys],
+            'starts': self._bucket_starts(keys),
             'op': [round(op[k], 2) for k in keys],
             'otc': [round(otc[k], 2) for k in keys],
         }
@@ -120,7 +124,8 @@ class HospitalSalesDashboard(models.AbstractModel):
         ranked = sorted(totals.items(), key=lambda kv: -kv[1]['amount'])[:TOP_PRODUCTS]
         products = self.env['product.product'].sudo().browse([pid for pid, _v in ranked])
         names = {p.id: p.display_name for p in products}
-        return [{'name': names.get(pid, ''), 'amount': round(v['amount'], 2), 'qty': v['qty']} for pid, v in ranked]
+        return [{'id': pid, 'name': names.get(pid, ''), 'amount': round(v['amount'], 2), 'qty': v['qty']}
+                for pid, v in ranked]
 
     def _top_customers(self, orders):
         totals = defaultdict(lambda: {'amount': 0.0, 'orders': 0, 'name': ''})
@@ -129,7 +134,8 @@ class HospitalSalesDashboard(models.AbstractModel):
             row['amount'] += order['amount']
             row['orders'] += 1
             row['name'] = order['partner_name']
-        rows = [{'name': v['name'], 'amount': round(v['amount'], 2), 'orders': v['orders']} for v in totals.values()]
+        rows = [{'id': pid, 'name': v['name'], 'amount': round(v['amount'], 2), 'orders': v['orders']}
+                for pid, v in totals.items()]
         return self._top(rows, 'amount', TOP_CUSTOMERS, _('Other customers'))
 
     def _refunds(self, d_from, d_to, company_ids):
@@ -154,9 +160,9 @@ class HospitalSalesDashboard(models.AbstractModel):
           ORDER BY 3 DESC
         """, [d_from, d_to, company_ids])
         rows = []
-        for _jid, name, amount, count in self.env.cr.fetchall():
+        for jid, name, amount, count in self.env.cr.fetchall():
             label = name.get(self.env.lang) or name.get('en_US') or next(iter(name.values()), '') if isinstance(name, dict) else name
-            rows.append({'name': label, 'amount': round(amount, 2), 'count': count})
+            rows.append({'id': jid, 'name': label, 'amount': round(amount, 2), 'count': count})
         return rows
 
     def _unpaid_invoices(self, company_ids):

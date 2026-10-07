@@ -39,6 +39,9 @@ class TestDoctorDashboard(TransactionCase):
             self.Dashboard.with_user(self.reception_user).get_dashboard_data(self.today, self.today)
         options = self.Dashboard.with_user(self.doctor_user).get_filter_options()
         self.assertEqual(options['my_doctor_id'], self.doctor.id)
+        # Click-through only to records the user may open.
+        self.assertTrue(options['drill']['hospital.op.ticket'])
+        self.assertIn('account.move', options['drill'])
 
     def test_visit_counts(self):
         data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
@@ -49,7 +52,7 @@ class TestDoctorDashboard(TransactionCase):
         self.assertEqual(kpis['patients'], 1)
         self.assertEqual(kpis['new_patients'], 1)
         self.assertEqual(sum(data['visits_series']['values']), 2)
-        self.assertEqual(data['doctors'], [{'name': 'Dr Dash', 'visits': 2}])
+        self.assertEqual(data['doctors'], [{'id': self.doctor.id, 'name': 'Dr Dash', 'visits': 2}])
         gender = {g['label']: g['count'] for g in data['mix']['gender']}
         self.assertEqual(gender['Female'], 2)
 
@@ -90,6 +93,8 @@ class TestDoctorDashboard(TransactionCase):
         self.assertEqual((top['name'], top['count'], top['qty'], top['patients'], top['value']),
                          ('Dash Dressing', 2, 3, 1, 450))
         self.assertEqual(sum(data['procedures']['series']['values']), 2)
-        self.assertEqual(data['procedures']['doctors'], [{'name': 'Dr Dash', 'count': 2}])
+        self.assertEqual(data['procedures']['doctors'], [{'id': self.doctor.id, 'name': 'Dr Dash', 'count': 2}])
+        self.assertEqual(data['procedures']['top'][0]['id'], procedure.id)
+        self.assertEqual(len(data['procedures']['series']['starts']), len(data['procedures']['series']['labels']))
         gender = {g['label']: g['count'] for g in data['procedures']['gender']}
         self.assertEqual(gender['Female'], 2)

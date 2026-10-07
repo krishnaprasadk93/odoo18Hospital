@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import timedelta
 
 from odoo import _, api, fields, models
 
@@ -24,7 +25,10 @@ class HospitalPurchaseDashboard(models.AbstractModel):
     @api.model
     def get_filter_options(self):
         self._check_doctor_access()
-        return {'currency_id': self.env.company.currency_id.id}
+        return {
+            'currency_id': self.env.company.currency_id.id,
+            'drill': self._drill_access(['purchase.order', 'account.move']),
+        }
 
     @api.model
     def get_dashboard_data(self, date_from, date_to):
@@ -111,6 +115,7 @@ class HospitalPurchaseDashboard(models.AbstractModel):
             spend[self._bucket_start(self._to_local_date(order['order_date']), kind)] += order['amount']
         return {
             'labels': [self._bucket_label(k, kind) for k in keys],
+            'starts': self._bucket_starts(keys),
             'spend': [round(spend[k], 2) for k in keys],
         }
 
@@ -119,7 +124,7 @@ class HospitalPurchaseDashboard(models.AbstractModel):
         for order in orders:
             totals[order['partner_id']]['amount'] += order['amount']
             totals[order['partner_id']]['name'] = order['partner_name']
-        rows = [{'name': v['name'], 'amount': round(v['amount'], 2)} for v in totals.values()]
+        rows = [{'id': pid, 'name': v['name'], 'amount': round(v['amount'], 2)} for pid, v in totals.items()]
         return self._top(rows, 'amount', TOP_VENDORS, _('Other vendors'))
 
     def _top_products(self, lines):
@@ -130,7 +135,8 @@ class HospitalPurchaseDashboard(models.AbstractModel):
         ranked = sorted(totals.items(), key=lambda kv: -kv[1]['amount'])[:TOP_PRODUCTS]
         products = self.env['product.product'].sudo().browse([pid for pid, _v in ranked])
         names = {p.id: p.display_name for p in products}
-        return [{'name': names.get(pid, ''), 'amount': round(v['amount'], 2), 'qty': v['qty']} for pid, v in ranked]
+        return [{'id': pid, 'name': names.get(pid, ''), 'amount': round(v['amount'], 2), 'qty': v['qty']}
+                for pid, v in ranked]
 
     def _open_rfqs(self, company_ids):
         self.env.cr.execute("""
@@ -187,9 +193,18 @@ class HospitalPurchaseDashboard(models.AbstractModel):
             })
         return rows
 
-    @staticmethod
-    def _ageing(bills):
-        buckets = {key: {'key': key, 'label': label, 'amount': 0.0, 'count': 0} for key, label, *_rest in AGEING}
+    def _ageing(self, bills):
+        today = fields.Date.context_today(self)
+
+        def due_range(low, high):
+            # days overdue in [low, high]  <=>  due date in [today - high, today - low]
+            return {
+                'due_from': fields.Date.to_string(today - timedelta(days=high)) if high is not None else False,
+                'due_to': fields.Date.to_string(today - timedelta(days=low)) if low is not None else False,
+            }
+
+        buckets = {key: {'key': key, 'label': label, 'amount': 0.0, 'count': 0, **due_range(low, high)}
+                   for key, label, low, high in AGEING}
         for bill in bills:
             days = bill['days_overdue']
             for key, _label, low, high in AGEING:
