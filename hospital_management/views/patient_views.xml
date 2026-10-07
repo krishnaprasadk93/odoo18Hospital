@@ -3,9 +3,8 @@
         <field name="name">hospital.patient.form</field>
         <field name="model">hospital.patient</field>
         <field name="arch" type="xml">
-            <form>
+            <form class="o_hc_form">
                 <sheet>
-                    <!-- Button Box moved directly into the main form -->
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_visits"
                                 type="object"
@@ -15,32 +14,58 @@
                         </button>
                     </div>
 
-                    <div class="oe_title">
-                        <h1><field name="patient_seq"/></h1>
+                    <!-- Patient profile header -->
+                    <div class="o_hc_head">
+                        <div class="o_hc_avatar"><field name="initials" readonly="1"/></div>
+                        <div class="o_hc_head_main">
+                            <div class="o_hc_eyebrow"><field name="patient_seq" readonly="1" class="oe_inline"/></div>
+                            <h1 class="o_hc_title"><field name="name" placeholder="Patient name"/></h1>
+                            <div class="o_hc_chips" invisible="not profile_summary">
+                                <span class="o_hc_chip"><field name="profile_summary" class="oe_inline"/></span>
+                            </div>
+                        </div>
                     </div>
-                    <group>
-                        <group>
-                            <field name="name"/>
-                             <field name="age"/>
+
+                    <group class="o_hc_cols">
+                        <group string="Personal">
+                            <field name="age"/>
                             <field name="date_of_birth"/>
-                            <field name="phone"/>
+                            <field name="gender"/>
+                            <field name="marital_status"/>
                         </group>
-                        <group>
+                        <group string="Contact &amp; medical">
+                            <field name="phone" widget="phone"/>
                             <label for="blood_group" string="Blood Group"/>
                             <div class="o_row">
                                 <field name="blood_group" class="oe_inline"/>
-                                <field name="rh_type" widget="radio" class="oe_inline"/>
+                                <field name="rh_type" widget="radio" class="oe_inline" options="{'horizontal': true}"/>
                             </div>
-                            <field name="gender"/>
-                            <field name="marital_status"/>
+                            <field name="doctor_id" string="Family Doctor"/>
                         </group>
                     </group>
 
                     <notebook>
-                        <page string="Personal Information">
+                        <page string="Visits" name="visits">
+                            <field name="visit_ids" readonly="1"
+                                   context="{'form_view_ref': 'hospital_management.view_op_ticket_popup_form'}">
+                                <list default_order="appointment_date desc">
+                                    <field name="appointment_date" string="Date"/>
+                                    <field name="visit_no"/>
+                                    <field name="token_number" string="Token" optional="hide"/>
+                                    <field name="doctor_id"/>
+                                    <field name="reason" string="Diagnosis"
+                                           groups="hospital_management.group_hospital_doctor"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'op'" decoration-warning="state == 'consulting'"
+                                           decoration-primary="state == 'pharmacy'" decoration-success="state == 'done'"
+                                           decoration-danger="state == 'cancelled'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Address &amp; ID" name="contact">
                             <group>
                                 <group>
-                                    <label for="street" string="Contact"/>
+                                    <label for="street" string="Address"/>
                                     <div class="o_address_format">
                                         <field name="street" placeholder="Street..." class="o_address_street"/>
                                         <field name="street2" placeholder="Street 2..." class="o_address_street"/>
@@ -52,50 +77,42 @@
                                     <field name="email"/>
                                 </group>
                                 <group>
-                                    <field name="barcode_png" widget="image" class="float-end" style="width: 200px;"/>
                                     <field name="barcode"/>
+                                    <field name="barcode_png" widget="image" nolabel="1" colspan="2"
+                                           class="o_hc_barcode" invisible="not barcode_png"/>
                                 </group>
                             </group>
                         </page>
-                        <page string="Family and Insurance">
+                        <page string="Other Details" name="other">
                             <group>
-                                <field name="insurance_id"/>
-                                <field name="house_level"/>
-                                <field name="work_home"/>
-                            </group>
-                        </page>
-                        <page string="Life Style">
-                            <group>
-                                <group>
+                                <group string="Family &amp; insurance">
+                                    <field name="insurance_id"/>
+                                    <field name="house_level"/>
+                                    <field name="work_home"/>
+                                </group>
+                                <group string="Socioeconomic">
+                                    <field name="economic_level"/>
+                                    <field name="education_level"/>
+                                    <field name="occupation"/>
+                                    <field name="income"/>
+                                </group>
+                                <group string="Lifestyle">
                                     <field name="exercise"/>
                                     <field name="diet"/>
                                     <field name="sleep_hrs"/>
-                                </group>
-                                <group>
                                     <field name="smoker"/>
                                     <field name="drinker"/>
                                     <field name="alcoholic"/>
                                 </group>
+                                <group string="Women's health" invisible="gender == 'male'">
+                                    <field name="fertile"/>
+                                    <field name="menarche_age"/>
+                                    <field name="pause"/>
+                                    <field name="mammography"/>
+                                </group>
                             </group>
                         </page>
-                        <page string="Medical">
-                            <group>
-                                <field name="doctor_id"/>
-                                <field name="fertile"/>
-                                <field name="menarche_age"/>
-                                <field name="pause"/>
-                                <field name="mammography"/>
-                            </group>
-                        </page>
-                        <page string="Socioeconomic">
-                            <group>
-                                <field name="economic_level"/>
-                                <field name="education_level"/>
-                                <field name="occupation"/>
-                                <field name="income"/>
-                            </group>
-                        </page>
-                        <page string="Internal Notes">
+                        <page string="Internal Notes" name="notes">
                             <field name="comment" placeholder="Internal notes..."/>
                         </page>
                     </notebook>
@@ -108,12 +125,14 @@
         <field name="name">hospital.patient.list</field>
         <field name="model">hospital.patient</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="patient_seq"/>
+            <list class="o_hc_patient_list">
+                <field name="patient_seq" class="fw-semibold"/>
                 <field name="name"/>
+                <field name="age" optional="show"/>
                 <field name="gender"/>
                 <field name="phone" required="1"/>
                 <field name="blood_group"/>
+                <field name="doctor_id" string="Family Doctor" optional="hide"/>
             </list>
         </field>
     </record>
