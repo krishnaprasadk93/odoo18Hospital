@@ -6,11 +6,20 @@
         <field name="name">product.product.medicine.list</field>
         <field name="model">product.product</field>
         <field name="arch" type="xml">
-            <list string="Medicines">
+            <list string="Medicines" class="o_hc_medicine_list" decoration-muted="not active">
+                <field name="active" column_invisible="1"/>
                 <field name="name"/>
-                <field name="medicine_type"/>
-                <field name="list_price"/>
-                <field name="qty_available"/>
+                <field name="medicine_type" optional="show"/>
+                <field name="list_price" string="Price"/>
+                <field name="qty_available" string="On Hand" class="o_hc_qty_cell"/>
+                <field name="stock_level" string="Stock" widget="badge"
+                       decoration-danger="stock_level == 'out'" decoration-warning="stock_level == 'low'"
+                       decoration-success="stock_level == 'ok'"/>
+                <field name="nearest_expiry_date" optional="show"/>
+                <field name="expiry_state" column_invisible="1"/>
+                <field name="expiry_text" string="Expiry" widget="badge"
+                       decoration-danger="expiry_state == 'expired'" decoration-warning="expiry_state == 'soon'"
+                       decoration-success="expiry_state == 'ok'"/>
             </list>
         </field>
     </record>
@@ -23,7 +32,7 @@
         <field name="priority">100</field>
         <field name="arch" type="xml">
 
-            <form string="Medicine">
+            <form string="Medicine" class="o_hc_form">
                 <!-- Force behavior fields (hidden) -->
                 <field name="is_medicine" invisible="1"/>
                 <field name="sale_ok" invisible="1"/>
@@ -47,7 +56,7 @@
                                 name="action_open_quants"
                                 icon="fa-cubes"
                                 type="object"
-                                invisible="type != 'product'">
+                                invisible="not is_storable">
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_value">
                                     <field name="qty_available" widget="statinfo" nolabel="1" class="mr4"/>
@@ -76,33 +85,54 @@
 
                     </div>
 
-                    <!-- Product Name on Top -->
-                    <div class="oe_title">
-                        <label for="name"/>
-                        <h1><field name="name"/></h1>
+                    <!-- Medicine header card -->
+                    <div class="o_hc_head">
+                        <div class="o_hc_avatar o_hc_avatar_square"><i class="fa fa-medkit" title="Medicine"/></div>
+                        <div class="o_hc_head_main">
+                            <div class="o_hc_eyebrow">
+                                <field name="medicine_type" readonly="1" class="oe_inline" invisible="not medicine_type"/>
+                                <span invisible="medicine_type">Medicine</span>
+                            </div>
+                            <h1 class="o_hc_title"><field name="name" placeholder="Medicine name"/></h1>
+                            <div class="o_hc_chips">
+                                <span class="o_hc_chip">
+                                    <i class="fa fa-tag" title="Price"/>
+                                    <field name="list_price" widget="monetary" readonly="1" class="oe_inline"/>
+                                </span>
+                                <span class="o_hc_chip">
+                                    <i class="fa fa-cubes" title="On hand"/>
+                                    <field name="qty_available" readonly="1" class="oe_inline"/> on hand
+                                </span>
+                                <span class="o_hc_chip" invisible="not expiry_text">
+                                    <i class="fa fa-calendar" title="Nearest expiry"/>
+                                    <field name="expiry_text" class="oe_inline"/>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="o_hc_head_status">
+                            <field name="stock_level" widget="badge"
+                                   decoration-danger="stock_level == 'out'" decoration-warning="stock_level == 'low'"
+                                   decoration-success="stock_level == 'ok'"/>
+                            <field name="expiry_state" widget="badge" invisible="not expiry_state or expiry_state == 'ok'"
+                                   decoration-danger="expiry_state == 'expired'" decoration-warning="expiry_state == 'soon'"/>
+                        </div>
                     </div>
 
-                    <!-- TABS -->
-                    <notebook>
-                        <!-- ================= GENERAL TAB ================= -->
-                        <page string="General Information">
-                            <group>
-                                <group>
-                                    <field name="tracking" string="Track Inventory" invisible="1"/>
-                                    <field name="medicine_type"/>
-                                </group>
-                                <group>
-                                    <field name="list_price" string="Sales Price" help=""/>
-                                    <field name="minimum_qty" string="Minimum Stock Quantity" help=""/>
-                                    <field name="enable_low_stock_alert" string="Enable Low Stock Alert" help=""/>
-                                    <field name="standard_price" string="Cost Price" invisible="1"/>
-                                    <field name="categ_id" string="Category" invisible="1"/>
-                                    <field name="default_code" string="Reference" invisible="1" />
-                                    <field name="description" string="Note" invisible="1"/>
-                                </group>
-                            </group>
-                        </page>
-                    </notebook>
+                    <group class="o_hc_cols">
+                        <group string="Medicine">
+                            <field name="tracking" string="Track Inventory" invisible="1"/>
+                            <field name="medicine_type"/>
+                            <field name="list_price" string="Sales Price" help=""/>
+                        </group>
+                        <group string="Stock alerts">
+                            <field name="minimum_qty" string="Minimum Stock Quantity" help=""/>
+                            <field name="enable_low_stock_alert" string="Enable Low Stock Alert" help=""/>
+                            <field name="standard_price" string="Cost Price" invisible="1"/>
+                            <field name="categ_id" string="Category" invisible="1"/>
+                            <field name="default_code" string="Reference" invisible="1" />
+                            <field name="description" string="Note" invisible="1"/>
+                        </group>
+                    </group>
 
                 </sheet>
             </form>
@@ -112,6 +142,33 @@
 
 
     <!-- =========================
+         SEARCH
+    ========================== -->
+    <record id="view_product_medicine_search" model="ir.ui.view">
+        <field name="name">product.product.medicine.search</field>
+        <field name="model">product.product</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search string="Medicines">
+                <field name="name"/>
+                <field name="default_code"/>
+                <field name="medicine_type"/>
+                <!-- Low and Out of stock are OR-ed (same group) -->
+                <filter string="Low Stock" name="filter_low_stock" domain="[('stock_level', '=', 'low')]"/>
+                <filter string="Out of Stock" name="filter_out_of_stock" domain="[('stock_level', '=', 'out')]"/>
+                <separator/>
+                <filter string="Expiring in 30 Days" name="filter_expiring" domain="[('expiry_state', '=', 'soon')]"/>
+                <filter string="Expired Batches" name="filter_expired" domain="[('expiry_state', '=', 'expired')]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Medicine Type" name="group_medicine_type" context="{'group_by': 'medicine_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- =========================
          ACTION
     ========================== -->
     <record id="action_medicine_products" model="ir.actions.act_window">
@@ -119,6 +176,7 @@
     <field name="res_model">product.product</field>
     <field name="view_mode">list,form</field>
     <field name="view_id" ref="view_product_medicine_list"/>
+    <field name="search_view_id" ref="view_product_medicine_search"/>
     <field name="domain">[('is_medicine','=',True)]</field>
     <field name="context">
         {
@@ -128,6 +186,10 @@
             'default_type': 'consu',
             'form_view_ref': 'hospital_management.view_product_medicine_form'
         }
+    </field>
+    <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No medicines found</p>
+        <p>Click <b>New</b> to add a medicine, or clear the filters to see the full list.</p>
     </field>
 </record>
 

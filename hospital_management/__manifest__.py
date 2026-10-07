@@ -1,6 +1,6 @@
 {
     'name': 'Hospital Management',
-    'version': '18.0.2.1.0',
+    'version': '18.0.2.2.0',
     'author': 'Krishnaprasad K',
     'category': 'Healthcare',
     'summary': 'Complete Hospital Management System',
@@ -33,6 +33,8 @@
              'hospital_management/static/src/css/prescription.css',
              'hospital_management/static/src/scss/clinic.scss',
              'hospital_management/static/src/js/dose_select_focus.js',
+             'hospital_management/static/src/home/clinic_home.js',
+             'hospital_management/static/src/home/clinic_home.xml',
         ],
     },
     'installable': True,

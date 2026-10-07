@@ -6,25 +6,13 @@
         <field name="inherit_id" ref="hospital_management.view_hospital_res_config_settings"/>
         <field name="arch" type="xml">
 
-            <xpath expr="//div[@name='hospital_settings']/div[@class='row mt16 o_settings_container']" position="inside">
-
-                <!-- Show Print Preview -->
-                <div class="col-12 col-lg-6 o_setting_box">
-                    <div class="o_setting_left_pane">
+            <xpath expr="//block[@name='hospital_payments_block']" position="after">
+                <block title="Printing" name="hospital_printing_block">
+                    <setting id="hospital_show_print_preview"
+                             help="Thermal receipts (consultation, pharmacy, invoice) open a print preview with a Print button instead of printing directly to QZ Tray.">
                         <field name="show_print_preview"/>
-                    </div>
-                    <div class="o_setting_right_pane">
-
-                        <label for="show_print_preview"/>
-                        <div class="text-muted">
-                            When enabled, thermal receipts (consultation, pharmacy, invoice)
-                            open a print preview with a Print button instead of printing
-                            directly to QZ Tray.
-                        </div>
-
-                    </div>
-                </div>
-
+                    </setting>
+                </block>
             </xpath>
 
         </field>

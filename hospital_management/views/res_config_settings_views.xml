@@ -7,67 +7,30 @@
         <field name="arch" type="xml">
 
             <xpath expr="//form" position="inside">
+                <app data-string="Clinic" string="Clinic" name="hospital_management">
 
-                <div class="app_settings_block"
-                     data-string="Hospital"
-                     string="Hospital"
-                     name="hospital_settings">
-
-                    <h2>Hospital Settings</h2>
-
-                    <div class="row mt16 o_settings_container">
-
-                        <!-- Revisit Days -->
-                        <div class="col-12 col-lg-6 o_setting_box">
-                            <div class="o_setting_left_pane"/>
-                            <div class="o_setting_right_pane">
-
-                                <label for="revisit_limit_days"/>
-                                <div class="text-muted">
-                                    Consultation is free if patient revisits within these days.
-                                </div>
-
-                                <field name="revisit_limit_days"/>
-
+                    <block title="Visits &amp; revisits" name="hospital_visits_block">
+                        <setting id="hospital_revisit_limit" string="Free revisit window"
+                                 help="Consultation is free if the patient comes back within these days.">
+                            <div class="d-flex align-items-baseline gap-2">
+                                <field name="revisit_limit_days" class="o_light_label" style="width: 6rem;"/>
+                                <span>days</span>
                             </div>
-                        </div>
+                        </setting>
+                        <setting id="hospital_revisit_check" string="Count revisits by"
+                                 help="Hospital-wide: any earlier visit counts. Doctor-wise: only an earlier visit to the same doctor counts.">
+                            <field name="revisit_check_type" widget="radio" class="o_light_label"/>
+                        </setting>
+                    </block>
 
-                        <!-- NEW: Revisit Check Type -->
-                        <div class="col-12 col-lg-6 o_setting_box">
-                            <div class="o_setting_left_pane"/>
-                            <div class="o_setting_right_pane">
+                    <block title="Payments" name="hospital_payments_block">
+                        <setting id="hospital_require_amount_collected"
+                                 help="When a payment includes cash, the cashier must enter the amount the patient handed over before the invoice can be processed.">
+                            <field name="require_amount_collected_entry"/>
+                        </setting>
+                    </block>
 
-                                <label for="revisit_check_type"/>
-                                <div class="text-muted">
-                                    Choose whether revisit validity is based on hospital-wide visits or the same doctor.
-                                </div>
-
-                                <field name="revisit_check_type" widget="radio"/>
-
-                            </div>
-                        </div>
-
-                        <!-- NEW: Require Amount Collected Entry -->
-                        <div class="col-12 col-lg-6 o_setting_box">
-                            <div class="o_setting_left_pane">
-                                <field name="require_amount_collected_entry"/>
-                            </div>
-                            <div class="o_setting_right_pane">
-
-                                <label for="require_amount_collected_entry"/>
-                                <div class="text-muted">
-                                    When enabled, the cashier must enter the Amount Given by
-                                    Customer whenever the payment includes a Cash amount
-                                    greater than zero, before the invoice/payment can be processed.
-                                </div>
-
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
+                </app>
             </xpath>
 
         </field>

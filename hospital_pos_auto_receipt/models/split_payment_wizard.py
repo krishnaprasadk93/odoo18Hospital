@@ -26,6 +26,11 @@ class SplitPaymentWizard(models.TransientModel):
     card_amount = fields.Float()
     upi_amount = fields.Float()
 
+    # Display helpers for the payment popup.
+    partner_name = fields.Char(related='sale_id.partner_id.name', string='Customer')
+    amount_paid = fields.Float(string='Split Total', compute='_compute_amount_remaining')
+    amount_remaining = fields.Float(string='Remaining', compute='_compute_amount_remaining')
+
     amount_given = fields.Float(
         string='Amount Given by Customer',
         help='Cash amount physically handed over by the customer.'
@@ -59,6 +64,12 @@ class SplitPaymentWizard(models.TransientModel):
             # so a mixed cash+card/upi split still reflects only the cash
             # actually due (the cashier can still edit it afterwards).
             rec.amount_given = rec.cash_amount
+
+    @api.depends('amount_total', 'cash_amount', 'card_amount', 'upi_amount')
+    def _compute_amount_remaining(self):
+        for rec in self:
+            rec.amount_paid = (rec.cash_amount or 0.0) + (rec.card_amount or 0.0) + (rec.upi_amount or 0.0)
+            rec.amount_remaining = (rec.amount_total or 0.0) - rec.amount_paid
 
     @api.depends('amount_given', 'cash_amount')
     def _compute_balance_amount(self):

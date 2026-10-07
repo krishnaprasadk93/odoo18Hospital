@@ -5,6 +5,48 @@ $hc-border: #e3e8e7;
 $hc-muted: #6b7774;
 $hc-soft: rgba($hc-accent, .07);
 
+// ---------- shared pieces (forms, sale order visit card, popups)
+.o_hc_chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.o_hc_chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: $hc-soft;
+    color: darken($hc-accent, 8%);
+    font-size: 13px;
+    .o_field_widget { width: auto; color: inherit; }
+    a { color: inherit; }
+    .fa { opacity: .75; }
+}
+.o_hc_token, .o_hc_form .o_hc_avatar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: $hc-accent;
+    color: #fff;
+    .o_field_widget, span { color: inherit; }
+}
+.o_hc_token {
+    min-width: 72px;
+    padding: 6px 10px;
+    .o_field_widget { font-size: 28px; font-weight: 700; line-height: 1.1; }
+}
+.o_hc_token_label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    opacity: .85;
+}
+
 .o_hc_form {
     // ---------- header card (visit + patient)
     .o_hc_head {
@@ -34,23 +76,6 @@ $hc-soft: rgba($hc-accent, .07);
         .o_field_widget, .o_field_many2one { width: 100%; }
         .o_field_many2one, .o_input { font-size: inherit; }
     }
-    .o_hc_chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .o_hc_chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 10px;
-        border-radius: 999px;
-        background: $hc-soft;
-        color: darken($hc-accent, 8%);
-        font-size: 13px;
-        .o_field_widget { width: auto; color: inherit; }
-        .fa { opacity: .75; }
-    }
     .o_hc_head_status {
         display: flex;
         flex-direction: column;
@@ -63,29 +88,6 @@ $hc-soft: rgba($hc-accent, .07);
         color: $hc-muted;
     }
 
-    // token box / avatar
-    .o_hc_token, .o_hc_avatar {
-        flex: 0 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: $hc-accent;
-        color: #fff;
-        .o_field_widget, span { color: inherit; }
-    }
-    .o_hc_token {
-        min-width: 72px;
-        padding: 6px 10px;
-        .o_field_widget { font-size: 28px; font-weight: 700; line-height: 1.1; }
-    }
-    .o_hc_token_label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        opacity: .85;
-    }
     .o_hc_avatar {
         width: 64px;
         height: 64px;
@@ -93,6 +95,7 @@ $hc-soft: rgba($hc-accent, .07);
         font-size: 24px;
         font-weight: 600;
         .o_field_widget { width: auto; text-align: center; }
+        &.o_hc_avatar_square { border-radius: 14px; font-size: 26px; }
     }
 
     // last-visit note
@@ -181,8 +184,173 @@ $hc-soft: rgba($hc-accent, .07);
     .o_hc_wait { color: #b26b00; font-weight: 600; }
 }
 
-@include media-breakpoint-down(md) {
-    .o_hc_form .o_hc_head_status { align-items: flex-start; flex-direction: row; }
-    .o_hc_form .o_hc_title { font-size: 22px; }
+// Sale order created from a visit
+.o_hc_so_visit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 12px;
+    .o_hc_token { min-width: 60px; padding: 4px 8px; .o_field_widget { font-size: 22px; } }
+}
+
+// ---------- payment popups (consultation + pharmacy)
+.o_hc_pay {
+    .o_hc_pay_total {
+        text-align: center;
+        padding: 4px 0 16px;
+    }
+    .o_hc_pay_total_label {
+        font-size: 12px;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: $hc-muted;
+    }
+    .o_hc_pay_total_value, .o_hc_pay_total_value span {
+        font-size: 34px;
+        font-weight: 700;
+        color: darken($hc-accent, 8%);
+        font-variant-numeric: tabular-nums;
+    }
+    .o_hc_pay_who { color: $hc-muted; .o_field_widget { width: auto; } }
+    .o_hc_pay_tiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .o_hc_pay_tile {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px;
+        border: 1px solid $hc-border;
+        border-radius: 12px;
+        background: #fff;
+        &:focus-within { border-color: $hc-accent; box-shadow: 0 0 0 3px rgba($hc-accent, .15); }
+    }
+    .o_hc_pay_tile_head { font-weight: 600; .fa { color: $hc-accent; margin-right: 4px; } }
+    .o_hc_pay_amount input {
+        font-size: 20px;
+        font-weight: 600;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    .o_hc_pay_journal { font-size: 12px; color: $hc-muted; }
+    .o_hc_pay_status {
+        margin-top: 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        .o_field_widget { width: auto; }
+    }
+    .o_hc_pay_ok { background: rgba(#1f9d55, .1); color: #17733f; }
+    .o_hc_pay_due { background: rgba(#d97706, .12); color: #92400e; }
+    .o_hc_pay_over { background: rgba($danger, .1); color: darken($danger, 10%); }
+    .o_hc_pay_cash {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: $hc-soft;
+        label { display: block; font-weight: 600; }
+    }
+    .o_hc_pay_change { text-align: right; }
+    .o_hc_pay_change_value, .o_hc_pay_change_value span {
+        font-size: 28px;
+        font-weight: 700;
+        color: darken($hc-accent, 8%);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// ---------- pharmacy queue + medicines
+.o_hc_pharmacy_queue .o_hc_med_count { font-weight: 600; }
+.o_hc_medicine_list .o_hc_qty_cell { font-weight: 700; font-variant-numeric: tabular-nums; }
+.o_hc_lot_badges .badge { font-size: 12px; font-weight: 500; .o_field_widget { width: auto; } }
+
+// ---------- Clinic home
+.o_hc_home {
+    height: 100%;
+    overflow: auto;
+    background: var(--o-view-background-color, #f6f8f8);
+    .o_hc_home_inner { width: 100%; max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    .o_hc_home_head {
+        margin-bottom: 24px;
+        h1 { font-size: 28px; font-weight: 600; margin: 4px 0 0; }
+    }
+    .o_hc_eyebrow { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: $hc-muted; }
+    .o_hc_home_tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+    }
+    .o_hc_home_tile {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas: "icon label" "icon count" "hint hint";
+        align-items: center;
+        column-gap: 12px;
+        padding: 18px;
+        border: 1px solid $hc-border;
+        border-radius: 14px;
+        background: #fff;
+        text-align: left;
+        transition: box-shadow .15s, transform .15s, border-color .15s;
+        &:hover, &:focus-visible {
+            border-color: $hc-accent;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+            transform: translateY(-1px);
+        }
+    }
+    .o_hc_home_icon {
+        grid-area: icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: $hc-soft;
+        color: $hc-accent;
+        font-size: 22px;
+    }
+    .o_hc_home_label { grid-area: label; font-weight: 600; }
+    .o_hc_home_count {
+        grid-area: count;
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+    .o_hc_home_hint { grid-area: hint; margin-top: 8px; font-size: 13px; color: $hc-muted; }
+    .o_hc_home_tile_alert {
+        .o_hc_home_icon { background: rgba($danger, .1); color: $danger; }
+        .o_hc_home_count { color: darken($danger, 5%); }
+    }
+    .o_hc_home_empty { color: $hc-muted; .fa { font-size: 28px; } }
+}
+
+// ---------- phones and tablets
+@include media-breakpoint-down(lg) {
     .o_hc_form .o_hc_clinical { grid-template-columns: 1fr; }
+}
+@include media-breakpoint-down(md) {
+    .o_hc_form .o_hc_head { gap: 12px; }
+    .o_hc_form .o_hc_head_status { align-items: flex-start; flex-direction: row; flex-basis: 100%; }
+    .o_hc_form .o_hc_title { font-size: 22px; }
+    .o_hc_token { min-width: 60px; .o_field_widget { font-size: 22px; } }
+    // bigger tap targets on the workflow buttons
+    .o_form_view .o_form_statusbar .o_statusbar_buttons .btn { min-height: 40px; }
+    .o_hc_queue .o_kanban_record { min-height: 96px; }
+    .o_hc_pay .o_hc_pay_tiles { grid-template-columns: 1fr; }
+    .o_hc_pay .o_hc_pay_cash { flex-direction: column; align-items: stretch; }
+    .o_hc_pay .o_hc_pay_change { text-align: left; }
+    .o_hc_home .o_hc_home_inner { padding: 20px 16px; }
+    .o_hc_home .o_hc_home_tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .o_hc_home .o_hc_home_tile { padding: 14px; }
 }

@@ -18,4 +18,43 @@
     </field>
 </record>
 
+    <!-- Expiry badge next to the batch number -->
+    <record id="view_stock_lot_form_expiry_badge" model="ir.ui.view">
+        <field name="name">stock.lot.form.expiry.badge</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="inside">
+                <div class="d-flex flex-wrap gap-2 mt-1 o_hc_lot_badges">
+                    <field name="expiry_state" widget="badge" invisible="not expiry_state"
+                           decoration-danger="expiry_state == 'expired'" decoration-warning="expiry_state == 'soon'"
+                           decoration-success="expiry_state == 'ok'"/>
+                    <span class="badge rounded-pill text-bg-light" invisible="not expiry_date_only">
+                        Expires <field name="expiry_date_only" class="oe_inline"/>
+                    </span>
+                    <span class="badge rounded-pill text-bg-light" invisible="not selling_price">
+                        Selling price <field name="selling_price" readonly="1" class="oe_inline"/>
+                    </span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Batch list: expiry with a coloured badge, price and stock -->
+    <record id="view_stock_lot_list_medicine" model="ir.ui.view">
+        <field name="name">stock.lot.list.medicine</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="after">
+                <field name="expiry_date_only" optional="show"/>
+                <field name="expiry_state" widget="badge" optional="show"
+                       decoration-danger="expiry_state == 'expired'" decoration-warning="expiry_state == 'soon'"
+                       decoration-success="expiry_state == 'ok'"/>
+                <field name="selling_price" optional="show"/>
+                <field name="available_qty" string="In Stock" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

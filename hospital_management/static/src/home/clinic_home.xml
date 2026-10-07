@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hospital_management.ClinicHome">
+        <div class="o_hc_home o_action">
+            <div class="o_hc_home_inner">
+                <div class="o_hc_home_head">
+                    <div class="o_hc_eyebrow" t-esc="dateText"/>
+                    <h1><t t-esc="greeting"/><t t-if="state.user">, <t t-esc="state.user"/></t></h1>
+                </div>
+                <div t-if="!state.loading and !state.tiles.length" class="o_hc_home_empty">
+                    <i class="fa fa-lock" title="No access"/>
+                    <p>No clinic menus are enabled for your user. Ask an administrator to add you to the
+                        Receptionist, Doctor or Pharmacist group.</p>
+                </div>
+                <div class="o_hc_home_tiles">
+                    <button t-foreach="state.tiles" t-as="tile" t-key="tile.key" type="button"
+                            class="o_hc_home_tile" t-att-class="{ o_hc_home_tile_alert: tile.alert }"
+                            t-on-click="() => this.open(tile)">
+                        <span class="o_hc_home_icon"><i t-attf-class="fa {{ tile.icon }}" t-att-title="tile.label"/></span>
+                        <span class="o_hc_home_label" t-esc="tile.label"/>
+                        <span class="o_hc_home_count" t-esc="tile.count"/>
+                        <span class="o_hc_home_hint" t-esc="tile.hint"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -7,6 +7,8 @@ class SaleOrder(models.Model):
 
     op_ticket_id = fields.Many2one('hospital.op.ticket', string='OP Ticket')
     visit_no = fields.Char(string='Visit No', related='op_ticket_id.visit_no', store=True)
+    op_token_number = fields.Char(related='op_ticket_id.token_number', string='Token')
+    op_patient_summary = fields.Char(related='op_ticket_id.patient_summary', string='Patient Details')
     prescription_ids = fields.One2many(related='op_ticket_id.prescription_ids', string='Prescriptions', readonly=True)
     prescription_note = fields.Html(related='op_ticket_id.prescription_note', string='Prescription Notes',
                                     readonly=True)
