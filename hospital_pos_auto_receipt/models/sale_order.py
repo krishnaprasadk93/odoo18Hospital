@@ -1,6 +1,7 @@
 
-from odoo import models
+from odoo import _, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import format_date
 
 
 class SaleOrder(models.Model):
@@ -108,13 +109,81 @@ class SaleOrder(models.Model):
             },
         }
 
+    def _expiry_text(self, expiration):
+        return format_date(self.env, fields.Datetime.context_timestamp(self, expiration).date())
+
+    def _get_expired_batch_issues(self):
+        """ Expired batches this order would sell, as readable lines:
+        - a batch chosen on an order line that has expired;
+        - a batch-tracked product with no batch chosen whose batches have all
+          expired (the delivery could only use an expired one);
+        - a batch already reserved on the order's open deliveries that has expired. """
+        self.ensure_one()
+        Lot = self.env['stock.lot']
+        if 'expiration_date' not in Lot._fields:
+            return []
+        now = fields.Datetime.now()
+
+        def expired(lot):
+            return lot.expiration_date and lot.expiration_date <= now
+
+        issues, seen = [], set()
+
+        def add_lot(product, lot):
+            if lot.id not in seen:
+                seen.add(lot.id)
+                issues.append(_("%(product)s: batch %(batch)s expired on %(date)s",
+                                product=product.display_name, batch=lot.name,
+                                date=self._expiry_text(lot.expiration_date)))
+
+        lines = self.order_line.filtered(
+            lambda l: l.product_id.is_storable and l.product_id.tracking != 'none')
+        has_line_lot = 'lot_id' in self.env['sale.order.line']._fields
+        for line in lines:
+            if has_line_lot and line.lot_id and expired(line.lot_id):
+                add_lot(line.product_id, line.lot_id)
+
+        without_lot = lines.filtered(lambda l: not (has_line_lot and l.lot_id)).product_id
+        for product in without_lot:
+            lots = Lot.search([('product_id', '=', product.id),
+                               ('company_id', 'in', (False, self.company_id.id))])
+            if lots and all(expired(lot) for lot in lots):
+                issues.append(_("%(product)s: all batches have expired (latest on %(date)s)",
+                                product=product.display_name,
+                                date=self._expiry_text(max(lots.mapped('expiration_date')))))
+
+        open_moves = self.picking_ids.filtered(
+            lambda p: p.state not in ('done', 'cancel') and p.picking_type_id.code == 'outgoing'
+        ).move_line_ids
+        for move_line in open_moves.filtered(lambda ml: ml.lot_id and expired(ml.lot_id)):
+            add_lot(move_line.product_id, move_line.lot_id)
+        return issues
+
+    def _check_expired_batches(self):
+        """ Block the sale with a popup when it would sell an expired batch. """
+        for order in self:
+            issues = order._get_expired_batch_issues()
+            if issues:
+                raise UserError(_(
+                    "Cannot confirm %(order)s: expired batch.\n\n%(issues)s\n\n"
+                    "Choose a batch that has not expired on the order line, or remove the line.",
+                    order=order.name, issues="\n".join("• " + issue for issue in issues)))
+
+    def action_confirm(self):
+        # Last check before confirming (after the missing-batch check of the
+        # Confirm / Confirm and Pay buttons): never sell an expired batch.
+        self._check_expired_batches()
+        return super().action_confirm()
+
     def action_open_split_payment(self):
         """ "Confirm and Pay": ask for a batch number first for any medicine
-        that has no batch yet, then open the split payment wizard. """
+        that has no batch yet, block expired batches, then open the split
+        payment wizard. """
         self.ensure_one()
         missing = self._get_products_missing_batch()
         if missing:
             return self._action_missing_batch_wizard(missing, 'pay')
+        self._check_expired_batches()
         return self._action_split_payment_wizard()
 
     def action_confirm_check_batch(self):
@@ -130,8 +199,3 @@ class SaleOrder(models.Model):
 
     def action_view_returns(self):
         pass
-
-
-
-
-

@@ -36,8 +36,11 @@ class SaleMissingBatchWizard(models.TransientModel):
             ).lot_id = lot
 
         if self.next_step == 'confirm':
+            # action_confirm runs the expired-batch check
             res = self.sale_id.with_context(validate_analytic=True).action_confirm()
             return res if isinstance(res, dict) else {'type': 'ir.actions.act_window_close'}
+        # A batch entered here with a past expiry date must not be sold either.
+        self.sale_id._check_expired_batches()
         return self.sale_id._action_split_payment_wizard()
 
 
