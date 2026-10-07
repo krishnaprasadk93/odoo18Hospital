@@ -78,6 +78,11 @@ class SplitPaymentWizard(models.TransientModel):
                 self.sale_id._action_missing_batch_wizard(missing, 'pay'),
                 "Create Batch")
 
+    def _check_expired_batches(self):
+        # Last batch check before confirming / paying (also covers orders that
+        # are already confirmed, through the batches reserved on their delivery).
+        self.sale_id._check_expired_batches()
+
     def _check_amount_collected_required(self):
         require_amount_collected = self.env['ir.config_parameter'].sudo().get_param(
             'hospital.require_amount_collected_entry', 'False'
@@ -89,6 +94,7 @@ class SplitPaymentWizard(models.TransientModel):
         self.ensure_one()
         sale = self.sale_id
         self._check_batches_exist()
+        self._check_expired_batches()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale (triggers your override logic)
@@ -178,6 +184,7 @@ class SplitPaymentWizard(models.TransientModel):
         self.ensure_one()
         sale = self.sale_id
         self._check_batches_exist()
+        self._check_expired_batches()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale
