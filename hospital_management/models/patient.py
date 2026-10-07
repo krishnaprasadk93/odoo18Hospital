@@ -67,6 +67,8 @@ class HospitalPatient(models.Model):
         store=True
     )
     visit_count = fields.Integer(compute="_compute_visit_count")
+    initials = fields.Char(compute='_compute_profile_display')
+    profile_summary = fields.Char(string='Profile', compute='_compute_profile_display')
 
     visit_ids = fields.One2many('hospital.op.ticket', 'patient_id', string='Visit History')
     sql_constraints = [
@@ -109,6 +111,28 @@ class HospitalPatient(models.Model):
 
         patients = self.search(args, limit=limit)
         return patients.name_get()
+
+    @api.depends('name', 'age', 'gender', 'blood_group', 'rh_type', 'phone', 'mobile')
+    def _compute_profile_display(self):
+        for rec in self:
+            words = [w for w in (rec.name or '').split() if w[0].isalpha()]
+            rec.initials = ''.join(w[0] for w in words[:2]).upper() or '?'
+            parts = [rec._get_profile_summary()]
+            if rec.phone or rec.mobile:
+                parts.append(rec.phone or rec.mobile)
+            rec.profile_summary = ' · '.join(p for p in parts if p)
+
+    def _get_profile_summary(self):
+        """ Short "34 y · Male · B+" line for headers and cards. """
+        self.ensure_one()
+        parts = []
+        if self.age:
+            parts.append(_('%s y', self.age))
+        if self.gender:
+            parts.append(dict(self._fields['gender']._description_selection(self.env))[self.gender])
+        if self.blood_group:
+            parts.append(self.blood_group.upper() + (self.rh_type or ''))
+        return ' · '.join(parts)
 
     @api.depends('date_of_birth')
     def _compute_age(self):
@@ -163,4 +187,3 @@ class HospitalPatient(models.Model):
             'domain': [('patient_id', '=', self.id)],
             'context': {'default_patient_id': self.id}
         }
-
