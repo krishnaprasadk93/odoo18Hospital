@@ -65,7 +65,7 @@ class HospitalOpTicket(models.Model):
         ('pharmacy', 'Pharmacy'),
         ('done', 'Done'),
         ('cancelled', 'Cancelled')
-    ], string='Status', default='draft', tracking=True, required=True)
+    ], string='Status', default='draft', tracking=True, required=True, group_expand='_expand_states')
 
     draft_state = fields.Selection([
         ('new', 'New'),
@@ -126,6 +126,15 @@ class HospitalOpTicket(models.Model):
         compute="_compute_last_visit",
         store=False
     )
+    last_visit_text = fields.Char(string="Last Visit Summary", compute="_compute_last_visit_text")
+
+    # Display helpers for the visit header, lists and the queue board.
+    patient_name = fields.Char(related='patient_id.name', string='Patient Name')
+    patient_summary = fields.Char(string='Patient Details', compute='_compute_patient_summary')
+    doctor_name = fields.Char(related='doctor_id.name', string='Doctor Name')
+    appointment_time_text = fields.Char(string='Time', compute='_compute_appointment_time_text')
+    waiting_text = fields.Char(string='Waiting', compute='_compute_waiting_text')
+
     # hospital.op.ticket model
     has_previous_prescription = fields.Boolean(
         string='Has Previous Prescription',
@@ -591,6 +600,60 @@ class HospitalOpTicket(models.Model):
                 ))
                 if delta.days < limit_days:
                     rec.is_free_revisit = True
+
+    @api.depends('last_visit_date', 'last_visit_days', 'is_free_revisit')
+    def _compute_last_visit_text(self):
+        for rec in self:
+            if not rec.last_visit_date:
+                rec.last_visit_text = False
+                continue
+            days = rec.last_visit_days
+            when = _('today') if days <= 0 else (_('yesterday') if days == 1 else _('%s days ago', days))
+            text = _('Last visit %s', when)
+            if rec.is_free_revisit:
+                text += ' · ' + _('Free revisit')
+            rec.last_visit_text = text
+
+    @api.depends('patient_id.age', 'patient_id.gender', 'patient_id.blood_group', 'patient_id.rh_type')
+    def _compute_patient_summary(self):
+        for rec in self:
+            rec.patient_summary = rec.patient_id._get_profile_summary() if rec.patient_id else False
+
+    @api.depends('appointment_date')
+    @api.depends_context('tz')
+    def _compute_appointment_time_text(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if not rec.appointment_date:
+                rec.appointment_time_text = False
+                continue
+            local = fields.Datetime.context_timestamp(rec, rec.appointment_date)
+            if local.date() == today:
+                fmt = '%I:%M %p'
+            elif local.year == today.year:
+                fmt = '%d %b, %I:%M %p'
+            else:
+                fmt = '%d %b %Y, %I:%M %p'
+            rec.appointment_time_text = local.strftime(fmt)
+
+    def _compute_waiting_text(self):
+        """ Time since the appointment for visits still in the clinic (today only). """
+        now = fields.Datetime.now()
+        for rec in self:
+            rec.waiting_text = False
+            if rec.state not in ('op', 'consulting', 'pharmacy') or not rec.appointment_date:
+                continue
+            minutes = int((now - rec.appointment_date).total_seconds() // 60)
+            if minutes < 1 or minutes >= 24 * 60:
+                continue
+            hours, mins = divmod(minutes, 60)
+            rec.waiting_text = _('%(h)s h %(m)s min', h=hours, m=mins) if hours else _('%s min', mins)
+
+    @api.model
+    def _expand_states(self, states, domain):
+        # Queue board: always show the active stages; cancelled only when it has visits.
+        keys = [key for key, _label in self._fields['state'].selection if key != 'cancelled']
+        return keys + (['cancelled'] if 'cancelled' in states else [])
 
     def action_view_visits2(self):
         return {
