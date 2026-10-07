@@ -2,9 +2,11 @@
 
 import { registry } from "@web/core/registry";
 import { DashboardBase } from "@hospital_doctor_dashboard/dashboard/dashboard_base";
-import { SERIES, barDataset, baseOptions } from "@hospital_doctor_dashboard/dashboard/doctor_dashboard";
+import { SERIES, barDataset, baseOptions } from "@hospital_doctor_dashboard/dashboard/chart_utils";
 
 const CRITICAL = "#d03b3b";
+const PO = "purchase.order";
+const MOVE = "account.move";
 
 export class PurchaseDashboard extends DashboardBase {
     static template = "hospital_purchase_dashboard.Dashboard";
@@ -22,20 +24,45 @@ export class PurchaseDashboard extends DashboardBase {
 
     get kpiTiles() {
         const k = this.state.data.kpis;
+        const money = (v) => this.money(v, true);
+        const openPos = this.canOpen(PO) ? () => this.openPos("Purchase orders") : undefined;
         return [
-            { key: "spend", label: "Purchases", value: this.money(k.spend), delta: this.delta(k.spend, k.spend_prev),
-              hint: "Confirmed orders, incl. tax" },
-            { key: "orders", label: "Purchase orders", value: this.qty(k.orders), delta: this.delta(k.orders, k.orders_prev) },
-            { key: "avg", label: "Average order", value: this.money(k.avg_order), hint: `${this.qty(k.vendors)} vendors` },
-            { key: "rfqs", label: "Open RFQs", value: this.qty(k.rfqs), hint: "Draft / sent, not confirmed" },
+            { key: "spend", label: "Purchases", ...this.moneyTile(k.spend), delta: this.delta(k.spend, k.spend_prev, money),
+              hint: "Confirmed orders, incl. tax", onClick: openPos },
+            { key: "orders", label: "Purchase orders", value: this.qty(k.orders), delta: this.delta(k.orders, k.orders_prev),
+              hint: "Confirmed in this period", onClick: openPos },
+            { key: "avg", label: "Average order", ...this.moneyTile(k.avg_order), hint: `${this.qty(k.vendors)} vendors` },
+            { key: "rfqs", label: "Open RFQs", value: this.qty(k.rfqs), hint: "Draft / sent, not confirmed",
+              onClick: this.canOpen(PO) ? () => this.openList("Open RFQs", PO, [["state", "in", ["draft", "sent", "to approve"]]]) : undefined },
             { key: "waiting", label: "Waiting receipt", value: this.qty(k.waiting_receipt), alert: k.waiting_receipt > 0,
               hint: "Confirmed, not fully received", onClick: () => this.showList("waiting") },
-            { key: "bills", label: "Bills to pay", value: this.money(k.bills_due), hint: "All open vendor bills",
+            { key: "bills", label: "Bills to pay", ...this.moneyTile(k.bills_due), hint: "All open vendor bills",
               onClick: () => this.showList("bills") },
-            { key: "overdue", label: "Overdue bills", value: this.money(k.overdue), alert: k.overdue > 0,
+            { key: "overdue", label: "Overdue bills", ...this.moneyTile(k.overdue), alert: k.overdue > 0,
               hint: `${this.qty(k.overdue_count)} bills past due`, onClick: () => this.showList("overdue") },
             { key: "vendors", label: "Vendors", value: this.qty(k.vendors), hint: "With confirmed orders" },
         ];
+    }
+
+    // ---------------- Click-through
+    posDomain([from, to] = this.range, extra = []) {
+        return [["state", "in", ["purchase", "done"]], ...this.datetimeDomain("date_approve", from, to), ...extra];
+    }
+
+    openPos(name, range = this.range, extra = []) {
+        return this.openList(name, PO, this.posDomain(range, extra));
+    }
+
+    openBills(bucket) {
+        const domain = [["move_type", "=", "in_invoice"], ["state", "=", "posted"],
+            ["payment_state", "in", ["not_paid", "partial"]]];
+        if (bucket.due_from) {
+            domain.push(["invoice_date_due", ">=", bucket.due_from]);
+        }
+        if (bucket.due_to) {
+            domain.push(["invoice_date_due", "<=", bucket.due_to]);
+        }
+        return this.openList(`Vendor bills: ${bucket.label}`, MOVE, domain);
     }
 
     showList(key) {
@@ -81,10 +108,21 @@ export class PurchaseDashboard extends DashboardBase {
         charts.spend = () => ({
             type: "bar",
             data: { labels: data.series.labels, datasets: [barDataset("Purchases", data.series.spend, SERIES[0])] },
-            options: baseOptions({ format: money, tickFormat: moneyShort }),
+            options: baseOptions({
+                format: money,
+                tickFormat: moneyShort,
+                onBarClick: this.canOpen(PO)
+                    ? (i) => this.openPos(`Purchase orders: ${data.series.labels[i]}`, this.bucket(data.series.starts, i))
+                    : undefined,
+            }),
         });
         charts.ageing = () => {
-            const options = baseOptions({ format: money, tickFormat: moneyShort });
+            const options = baseOptions({
+                format: money,
+                tickFormat: moneyShort,
+                onBarClick: this.canOpen(MOVE) ? (i) => this.openBills(data.ageing[i]) : undefined,
+                canClick: (i) => data.ageing[i].count > 0,
+            });
             options.plugins.tooltip.callbacks.afterLabel = (ctx) => ` ${data.ageing[ctx.dataIndex].count} bills`;
             return {
                 type: "bar",
@@ -96,8 +134,14 @@ export class PurchaseDashboard extends DashboardBase {
                 options,
             };
         };
-        const ranked = (rows) => () => {
-            const options = baseOptions({ horizontal: true, format: money, tickFormat: moneyShort });
+        const ranked = (rows, onRow) => () => {
+            const options = baseOptions({
+                horizontal: true,
+                format: money,
+                tickFormat: moneyShort,
+                onBarClick: this.canOpen(PO) ? (i) => onRow(rows[i]) : undefined,
+                canClick: (i) => Boolean(rows[i] && rows[i].id),
+            });
             options.layout.padding.right = 90;
             options.plugins.hdBarEndLabels.format = moneyShort;
             return {
@@ -109,8 +153,10 @@ export class PurchaseDashboard extends DashboardBase {
                 options,
             };
         };
-        charts.vendors = ranked(data.top_vendors);
-        charts.products = ranked(data.top_products);
+        charts.vendors = ranked(data.top_vendors, (r) => this.openPos(`Purchase orders: ${r.name}`, this.range,
+            [["partner_id", "=", r.id]]));
+        charts.products = ranked(data.top_products, (r) => this.openPos(`Purchase orders with ${r.name}`, this.range,
+            [["order_line.product_id", "=", r.id]]));
         return charts;
     }
 }

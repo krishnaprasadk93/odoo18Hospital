@@ -282,3 +282,53 @@
     .o_hd_kpis3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     @media (max-width: 767.98px) { .o_hd_kpis3 { grid-template-columns: minmax(0, 1fr); } }
 }
+
+// ---------------- Design pass: pinned filters, even card heights, clickable data
+.o_hd_dashboard {
+    // Filters stay visible while scrolling long dashboards. The page's top
+    // padding moves onto the header so the bar pins flush to the top edge.
+    .o_hd_scroll, &:fullscreen .o_hd_scroll { padding-top: 0; }
+    .o_hd_scroll > .o_hd_header { padding-top: 20px; }
+    .o_hd_filters {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        box-shadow: 0 6px 12px -10px rgba(15, 23, 42, 0.25);
+    }
+
+    // Cards in a row share the tallest card's height; their chart grows to fill
+    // it instead of leaving an empty band under a short chart.
+    .o_hd_grid > .o_hd_card {
+        display: flex;
+        flex-direction: column;
+        > .o_hd_canvas { flex: 1 1 auto; }
+        > .o_hd_empty { flex: 1 1 auto; }
+    }
+    .o_hd_grid > .o_hd_card.o_hd_card_auto { align-self: start; }
+
+    .o_hd_kpis6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    @media (max-width: 1399.98px) { .o_hd_kpis6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 767.98px) { .o_hd_kpis6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) { .o_hd_kpis6 { grid-template-columns: minmax(0, 1fr); } }
+
+    // Tile values: exact amount on hover.
+    .o_hd_kpi_value[title] { cursor: default; }
+    .o_hd_kpi_link .o_hd_kpi_value[title] { cursor: pointer; }
+
+    // Patient flow steps open their visits.
+    .o_hd_flow_item {
+        border-top: 0;
+        border-right: 0;
+        border-bottom: 0;
+        background: transparent;
+        text-align: left;
+        color: inherit;
+        &.o_hd_flow_link {
+            cursor: pointer;
+            border-radius: 0 6px 6px 0;
+            &:hover { background: rgba(15, 23, 42, 0.04); }
+            &:focus-visible { outline: 2px solid var(--hd-accent); outline-offset: 2px; }
+        }
+        &:disabled { opacity: 1; }
+    }
+}

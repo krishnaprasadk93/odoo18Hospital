@@ -2,65 +2,21 @@
 <templates xml:space="preserve">
 
     <t t-name="hospital_doctor_dashboard.DashChart">
-        <div class="o_hd_canvas" t-att-style="'height: ' + (props.height or 240) + 'px'">
+        <div class="o_hd_canvas" t-att-style="'min-height: ' + (props.height or 240) + 'px'">
             <canvas t-ref="canvas" role="img" t-att-aria-label="props.label"/>
         </div>
     </t>
 
-    <!-- Card header with chart / table toggle -->
-    <t t-name="hospital_doctor_dashboard.CardHead">
-        <div class="o_hd_card_head">
-            <div>
-                <h3 class="o_hd_card_title" t-esc="title"/>
-                <div t-if="subtitle" class="o_hd_card_sub" t-esc="subtitle"/>
-            </div>
-            <button t-if="tableKey" type="button" class="btn btn-link btn-sm o_hd_toggle"
-                    t-on-click="() => this.toggleTable(tableKey)">
-                <t t-if="state.tables[tableKey]"><i class="fa fa-bar-chart me-1"/>Chart</t>
-                <t t-else=""><i class="fa fa-table me-1"/>Table</t>
-            </button>
-        </div>
-    </t>
-
     <t t-name="hospital_doctor_dashboard.Dashboard">
-        <div class="o_action o_hd_dashboard">
+        <div t-ref="root" class="o_action o_hd_dashboard">
             <div class="o_hd_scroll">
 
                 <!-- ============ Header & filters (one row above the charts) ============ -->
-                <div class="o_hd_header">
-                    <div>
-                        <h1 class="o_hd_title">Clinic Dashboard</h1>
-                        <div class="o_hd_subtitle" t-if="state.data">
-                            <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
-                            <span class="o_hd_muted"> · compared with <t t-esc="state.data.period.prev_from"/> – <t t-esc="state.data.period.prev_to"/></span>
-                        </div>
-                    </div>
-                    <span t-if="state.loading" class="o_hd_muted"><i class="fa fa-circle-o-notch fa-spin me-1"/>Loading…</span>
-                </div>
+                <t t-call="hospital_doctor_dashboard.BaseHeader"><t t-set="title">Clinic Dashboard</t></t>
 
                 <div class="o_hd_filters">
-                    <div class="o_hd_presets" role="group" aria-label="Date range">
-                        <t t-foreach="presets" t-as="p" t-key="p.key">
-                            <button type="button" class="o_hd_chip"
-                                    t-att-class="{ 'o_hd_chip_active': state.preset === p.key }"
-                                    t-att-aria-pressed="state.preset === p.key ? 'true' : 'false'"
-                                    t-on-click="() => this.onPreset(p.key)">
-                                <i t-if="state.preset === p.key" class="fa fa-check me-1"/>
-                                <t t-esc="p.label"/>
-                            </button>
-                        </t>
-                    </div>
+                    <t t-call="hospital_doctor_dashboard.BaseDates"/>
                     <div class="o_hd_dates">
-                        <label class="o_hd_field">
-                            <span>From</span>
-                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom"
-                                   t-att-max="state.dateTo" t-on-change="(ev) => this.onDateChange('dateFrom', ev)"/>
-                        </label>
-                        <label class="o_hd_field">
-                            <span>To</span>
-                            <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo"
-                                   t-att-min="state.dateFrom" t-on-change="(ev) => this.onDateChange('dateTo', ev)"/>
-                        </label>
                         <label class="o_hd_field">
                             <span>Doctor</span>
                             <select class="form-select form-select-sm" t-on-change="onDoctorChange">
@@ -93,30 +49,21 @@
                     <div t-att-class="{ 'o_hd_body': true, 'o_hd_dim': state.loading }">
 
                         <!-- ============ KPI tiles ============ -->
-                        <div class="o_hd_kpis">
-                            <t t-foreach="kpiTiles" t-as="tile" t-key="tile.key">
-                                <div class="o_hd_card o_hd_kpi">
-                                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
-                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
-                                    <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
-                                        <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
-                                        <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
-                                        <t t-esc="tile.delta.text"/>
-                                    </div>
-                                    <div t-if="tile.hint" class="o_hd_kpi_hint" t-esc="tile.hint"/>
-                                </div>
-                            </t>
-                        </div>
+                        <t t-call="hospital_doctor_dashboard.BaseKpis">
+                            <t t-set="tiles" t-value="kpiTiles"/>
+                            <t t-set="cols" t-value="6"/>
+                        </t>
 
                         <!-- ============ Patient flow ============ -->
                         <div class="o_hd_card o_hd_flow">
                             <h3 class="o_hd_card_title">Patient flow</h3>
                             <div class="o_hd_flow_items">
                                 <t t-foreach="state.data.status" t-as="s" t-key="s.key">
-                                    <div t-att-class="{ 'o_hd_flow_item': true, 'o_hd_flow_cancel': s.key === 'cancelled' }">
+                                    <button type="button" t-att-class="{ 'o_hd_flow_item': true, 'o_hd_flow_cancel': s.key === 'cancelled', 'o_hd_flow_link': canOpen('hospital.op.ticket') }"
+                                            t-att-disabled="!canOpen('hospital.op.ticket')" t-on-click="() => this.openStatus(s)">
                                         <div class="o_hd_flow_value" t-esc="count(s.count)"/>
                                         <div class="o_hd_flow_label" t-esc="s.label"/>
-                                    </div>
+                                    </button>
                                 </t>
                             </div>
                         </div>
@@ -124,10 +71,10 @@
                         <!-- ============ Charts ============ -->
                         <div class="o_hd_grid">
                             <div class="o_hd_card o_hd_span2">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Visits</t>
                                     <t t-set="subtitle" t-value="'Non-cancelled visits ' + bucketLabel"/>
-                                    <t t-set="tableKey" t-value="'visits'"/>
+                                    <t t-set="chartKey" t-value="'visits'"/>
                                 </t>
                                 <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
                                 <t t-elif="state.tables.visits">
@@ -144,10 +91,10 @@
                             </div>
 
                             <div class="o_hd_card o_hd_span2">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Revenue</t>
                                     <t t-set="subtitle" t-value="'Posted invoices ' + bucketLabel + (state.doctorId ? ' · OTC sales excluded for a single doctor' : '')"/>
-                                    <t t-set="tableKey" t-value="'revenue'"/>
+                                    <t t-set="chartKey" t-value="'revenue'"/>
                                 </t>
                                 <div class="o_hd_legend" t-if="hasRevenue">
                                     <t t-foreach="revenueLegend" t-as="item" t-key="item.label">
@@ -176,9 +123,9 @@
                             </div>
 
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Visits by doctor</t>
-                                    <t t-set="tableKey" t-value="'doctors'"/>
+                                    <t t-set="chartKey" t-value="'doctors'"/>
                                 </t>
                                 <t t-if="!state.data.doctors.length"><div class="o_hd_empty">No visits in this period</div></t>
                                 <t t-elif="state.tables.doctors">
@@ -194,10 +141,10 @@
                             </div>
 
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Most prescribed medicines</t>
                                     <t t-set="subtitle">Number of prescriptions</t>
-                                    <t t-set="tableKey" t-value="'medicines'"/>
+                                    <t t-set="chartKey" t-value="'medicines'"/>
                                 </t>
                                 <t t-if="!state.data.medicines.length"><div class="o_hd_empty">No prescriptions in this period</div></t>
                                 <t t-elif="state.tables.medicines">
@@ -213,10 +160,10 @@
                             </div>
 
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Busiest hours</t>
                                     <t t-set="subtitle">Visits by appointment hour</t>
-                                    <t t-set="tableKey" t-value="'hours'"/>
+                                    <t t-set="chartKey" t-value="'hours'"/>
                                 </t>
                                 <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
                                 <t t-elif="state.tables.hours">
@@ -230,7 +177,7 @@
                                 <DashChart t-else="" config="charts.hours" label="'Visits by appointment hour'" height="200"/>
                             </div>
 
-                            <div class="o_hd_card">
+                            <div class="o_hd_card o_hd_card_auto">
                                 <h3 class="o_hd_card_title">Patient mix</h3>
                                 <t t-if="!hasVisits"><div class="o_hd_empty">No visits in this period</div></t>
                                 <t t-else="">
@@ -263,27 +210,17 @@
 
                         <!-- ============ Procedures ============ -->
                         <h2 class="o_hd_section_title"><i class="fa fa-stethoscope me-2" aria-hidden="true"/>Procedures</h2>
-                        <div class="o_hd_kpis o_hd_kpis3">
-                            <t t-foreach="procedureTiles" t-as="tile" t-key="tile.key">
-                                <div class="o_hd_card o_hd_kpi">
-                                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
-                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
-                                    <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
-                                        <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
-                                        <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
-                                        <t t-esc="tile.delta.text"/>
-                                    </div>
-                                    <div t-if="tile.hint" class="o_hd_kpi_hint" t-esc="tile.hint"/>
-                                </div>
-                            </t>
-                        </div>
+                        <t t-call="hospital_doctor_dashboard.BaseKpis">
+                            <t t-set="tiles" t-value="procedureTiles"/>
+                            <t t-set="cols" t-value="3"/>
+                        </t>
 
                         <div class="o_hd_grid">
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Most prescribed procedures</t>
                                     <t t-set="subtitle">Number of times prescribed</t>
-                                    <t t-set="tableKey" t-value="'procTop'"/>
+                                    <t t-set="chartKey" t-value="'procTop'"/>
                                 </t>
                                 <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
                                 <t t-elif="state.tables.procTop">
@@ -302,10 +239,10 @@
                             </div>
 
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Procedure value</t>
                                     <t t-set="subtitle">Qty × price prescribed, by procedure</t>
-                                    <t t-set="tableKey" t-value="'procValue'"/>
+                                    <t t-set="chartKey" t-value="'procValue'"/>
                                 </t>
                                 <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
                                 <t t-elif="state.tables.procValue">
@@ -321,10 +258,10 @@
                             </div>
 
                             <div class="o_hd_card o_hd_span2">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Procedures over time</t>
                                     <t t-set="subtitle" t-value="'Procedures prescribed ' + bucketLabel"/>
-                                    <t t-set="tableKey" t-value="'procSeries'"/>
+                                    <t t-set="chartKey" t-value="'procSeries'"/>
                                 </t>
                                 <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
                                 <t t-elif="state.tables.procSeries">
@@ -339,9 +276,9 @@
                             </div>
 
                             <div class="o_hd_card">
-                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                <t t-call="hospital_doctor_dashboard.BaseCardHead">
                                     <t t-set="title">Procedures by doctor</t>
-                                    <t t-set="tableKey" t-value="'procDoctors'"/>
+                                    <t t-set="chartKey" t-value="'procDoctors'"/>
                                 </t>
                                 <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
                                 <t t-elif="state.tables.procDoctors">
@@ -356,7 +293,7 @@
                                            height="chartHeight(state.data.procedures.doctors.length)"/>
                             </div>
 
-                            <div class="o_hd_card">
+                            <div class="o_hd_card o_hd_card_auto">
                                 <h3 class="o_hd_card_title">Procedure patients</h3>
                                 <div class="o_hd_card_sub">Procedures by patient gender</div>
                                 <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
@@ -384,6 +321,7 @@
                     </div>
                 </t>
             </div>
+            <t t-call="hospital_doctor_dashboard.BaseExpanded"/>
         </div>
     </t>
 </templates>

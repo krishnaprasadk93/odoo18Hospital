@@ -7,8 +7,8 @@
             <div>
                 <h1 class="o_hd_title" t-esc="title"/>
                 <div class="o_hd_subtitle" t-if="state.data">
-                    <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
-                    <span class="o_hd_muted"> · compared with <t t-esc="state.data.period.prev_from"/> – <t t-esc="state.data.period.prev_to"/></span>
+                    <t t-esc="periodText"/>
+                    <span t-if="previousPeriodText" class="o_hd_muted"> · compared with <t t-esc="previousPeriodText"/></span>
                     <span t-if="state.lastUpdated" class="o_hd_muted"> · updated <t t-esc="state.lastUpdated"/></span>
                     <span t-if="state.fullscreen" class="o_hd_muted"> · refreshes every 5 min</span>
                 </div>
@@ -53,9 +53,10 @@
         </div>
     </t>
 
-    <!-- KPI tile list. Expects `tiles`: {key, label, value, delta?, hint?, alert?, onClick?} -->
+    <!-- KPI tile list. Expects `tiles`: {key, label, value, title?, delta?, hint?, alert?, onClick?}
+         and optionally `cols` (3, 4 or 6 tiles per row; default 4). -->
     <t t-name="hospital_doctor_dashboard.BaseKpis">
-        <div class="o_hd_kpis o_hd_kpis4">
+        <div t-att-class="'o_hd_kpis o_hd_kpis' + (cols or 4)">
             <t t-foreach="tiles" t-as="tile" t-key="tile.key">
                 <t t-if="tile.onClick">
                     <button type="button" t-att-class="{ 'o_hd_card o_hd_kpi o_hd_kpi_link': true, 'o_hd_kpi_alert': tile.alert }"
@@ -64,13 +65,18 @@
                             <i t-if="tile.alert" class="fa fa-exclamation-circle me-1 o_hd_alert_icon" aria-hidden="true"/>
                             <t t-esc="tile.label"/>
                         </div>
-                        <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                        <div class="o_hd_kpi_value" t-esc="tile.value" t-att-title="tile.title"/>
+                        <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
+                            <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
+                            <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
+                            <t t-esc="tile.delta.text"/>
+                        </div>
                         <div class="o_hd_kpi_hint"><t t-esc="tile.hint"/> <i class="fa fa-angle-right ms-1"/></div>
                     </button>
                 </t>
                 <div t-else="" t-att-class="{ 'o_hd_card o_hd_kpi': true, 'o_hd_kpi_alert': tile.alert }">
                     <div class="o_hd_kpi_label" t-esc="tile.label"/>
-                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                    <div class="o_hd_kpi_value" t-esc="tile.value" t-att-title="tile.title"/>
                     <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
                         <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
                         <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>

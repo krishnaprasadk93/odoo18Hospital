@@ -30,7 +30,7 @@
                     <div>
                         <h1 class="o_hd_title">Inventory Dashboard</h1>
                         <div class="o_hd_subtitle" t-if="state.data">
-                            Movements <t t-esc="state.data.period.date_from"/> – <t t-esc="state.data.period.date_to"/>
+                            Movements <t t-esc="periodText"/>
                             <span class="o_hd_muted"> · stock as of now<t t-if="state.lastUpdated"> (updated <t t-esc="state.lastUpdated"/>)</t></span>
                             <span t-if="state.fullscreen" class="o_hd_muted"> · refreshes every 5 min</span>
                         </div>
@@ -108,13 +108,13 @@
                                             <i t-if="tile.alert" class="fa fa-exclamation-circle me-1 o_hi_alert_icon" aria-hidden="true"/>
                                             <t t-esc="tile.label"/>
                                         </div>
-                                        <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                        <div class="o_hd_kpi_value" t-esc="tile.value" t-att-title="tile.title"/>
                                         <div class="o_hd_kpi_hint"><t t-esc="tile.hint"/> <i class="fa fa-angle-right ms-1"/></div>
                                     </button>
                                 </t>
                                 <div t-else="" class="o_hd_card o_hd_kpi">
                                     <div class="o_hd_kpi_label" t-esc="tile.label"/>
-                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                    <div class="o_hd_kpi_value" t-esc="tile.value" t-att-title="tile.title"/>
                                     <div class="o_hd_kpi_hint" t-esc="tile.hint"/>
                                 </div>
                             </t>

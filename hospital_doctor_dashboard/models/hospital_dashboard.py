@@ -51,6 +51,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
             'default_company_ids': self._allowed_company_ids(),
             'doctors': [{'id': d.id, 'name': d.name, 'company_id': d.company_id.id} for d in doctors],
             'my_doctor_id': my_doctor.id or False,
+            'drill': self._drill_access(['hospital.op.ticket', 'hospital.patient', 'account.move']),
             'currency_id': self.env.company.currency_id.id,
         }
 
@@ -221,7 +222,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
             rows = cr.fetchall()
             products = self.env['product.product'].sudo().browse([r[0] for r in rows])
             names = {p.id: p.display_name for p in products}
-            medicines = [{'name': names.get(pid, ''), 'count': times, 'qty': qty} for pid, times, qty in rows]
+            medicines = [{'id': pid, 'name': names.get(pid, ''), 'count': times, 'qty': qty} for pid, times, qty in rows]
             cr.execute("""
                 SELECT COUNT(DISTINCT op_ticket_id) FROM prescription_line WHERE op_ticket_id = ANY(%s)
             """, [ticket_ids])
@@ -236,9 +237,11 @@ class HospitalDoctorDashboard(models.AbstractModel):
         for inv in invoices:
             rev_by_bucket[self._bucket_start(inv['invoice_date'], kind)][self._revenue_category(inv)] += inv['amount']
         labels = [self._bucket_label(k, kind) for k in keys]
-        visits_series = {'labels': labels, 'values': [visit_counts.get(k, 0) for k in keys]}
+        starts = self._bucket_starts(keys)
+        visits_series = {'labels': labels, 'starts': starts, 'values': [visit_counts.get(k, 0) for k in keys]}
         revenue_series = {
             'labels': labels,
+            'starts': starts,
             'consultation': [round(rev_by_bucket[k]['consultation'], 2) for k in keys],
             'pharmacy': [round(rev_by_bucket[k]['pharmacy'], 2) for k in keys],
             'other': [round(rev_by_bucket[k]['other'], 2) for k in keys],
@@ -262,7 +265,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
             e.id: e.name for e in self.env['hr.employee'].sudo().browse(list(doctor_counts))
         }
         ranked = doctor_counts.most_common()
-        doctors = [{'name': doctor_names.get(did, ''), 'visits': n} for did, n in ranked[:TOP_DOCTORS]]
+        doctors = [{'id': did, 'name': doctor_names.get(did, ''), 'visits': n} for did, n in ranked[:TOP_DOCTORS]]
         rest = sum(n for _did, n in ranked[TOP_DOCTORS:])
         if rest:
             doctors.append({'name': _('Other doctors'), 'visits': rest})
@@ -318,6 +321,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
         products = self.env['product.product'].sudo().browse(list(per_product))
         names = {p.id: p.display_name for p in products}
         rows = [{
+            'id': pid,
             'name': names.get(pid, ''),
             'count': v['count'],
             'qty': v['qty'],
@@ -325,7 +329,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
             'patients': len(v['patients']),
         } for pid, v in per_product.items()]
 
-        doctors = [{'name': doctor_names.get(did) or self.env['hr.employee'].sudo().browse(did).name, 'count': n}
+        doctors = [{'id': did, 'name': doctor_names.get(did) or self.env['hr.employee'].sudo().browse(did).name, 'count': n}
                    for did, n in by_doctor.most_common()]
         gender = [{'label': lbl, 'count': by_gender.get(k, 0)} for k, lbl in GENDER_LABELS.items()]
         if by_gender.get('unset'):
@@ -335,6 +339,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
             'by_value': sorted(rows, key=lambda r: -r['value'])[:TOP_PROCEDURES],
             'series': {
                 'labels': [self._bucket_label(k, kind) for k in keys],
+                'starts': self._bucket_starts(keys),
                 'values': [over_time.get(k, 0) for k in keys],
             },
             'doctors': self._top(doctors, 'count', TOP_DOCTORS, _('Other doctors')),

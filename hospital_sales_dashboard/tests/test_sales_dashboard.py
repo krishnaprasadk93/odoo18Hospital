@@ -38,5 +38,10 @@ class TestSalesDashboard(TransactionCase):
         self.assertEqual(sum(data['series']['op']), 0)
         op = self.Dashboard.with_user(self.doctor).get_dashboard_data(self.today, self.today, 'op')
         self.assertNotIn('Sales Dash Customer', [c['name'] for c in op['top_customers']])
+        # Click-through data: row ids and bucket start dates.
+        customer = next(c for c in data['top_customers'] if c['name'] == 'Sales Dash Customer')
+        self.assertEqual(customer['id'], self.partner.id)
+        self.assertEqual(len(data['series']['starts']), len(data['series']['labels']))
+        self.assertTrue(self.Dashboard.with_user(self.doctor).get_filter_options()['drill'] is not None)
         to_invoice = [r['name'] for r in data['lists']['to_invoice']['rows']]
         self.assertIn(self.order.name, to_invoice)

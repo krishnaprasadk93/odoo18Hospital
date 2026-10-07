@@ -4,7 +4,7 @@ import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } fr
 import { loadBundle } from "@web/core/assets";
 import { formatCurrency } from "@web/core/currency";
 import { useService } from "@web/core/utils/hooks";
-import { DashChart, PRESETS, presetRange } from "./doctor_dashboard";
+import { DashChart, PRESETS, bucketRange, nextDay, periodLabel, presetRange, utcStartOfDay } from "./chart_utils";
 
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 
@@ -13,7 +13,8 @@ const AUTO_REFRESH_MS = 5 * 60 * 1000;
  * full screen (wall display, auto refresh), per-chart expand and table views.
  *
  * Subclasses set `static model` and implement `dataArgs()` and
- * `buildCharts(data)`; they may override `initialFilters()`.
+ * `buildCharts(data)`; they may override `initialFilters()` and
+ * `onOptionsLoaded(options)`.
  */
 export class DashboardBase extends Component {
     static components = { DashChart };
@@ -58,6 +59,7 @@ export class DashboardBase extends Component {
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
             this.state.options = await this.orm.call(this.constructor.model, "get_filter_options", []);
+            this.onOptionsLoaded(this.state.options);
             await this.load();
         });
         onMounted(() => {
@@ -77,6 +79,8 @@ export class DashboardBase extends Component {
     initialFilters() {
         return {};
     }
+
+    onOptionsLoaded() {}
 
     dataArgs() {
         return [this.state.dateFrom, this.state.dateTo];
@@ -177,17 +181,78 @@ export class DashboardBase extends Component {
         });
     }
 
+    // ---------------- Click-through to the records behind a tile or bar
+
+    /** Whether the user may open `model` (the server reports read access per model). */
+    canOpen(model) {
+        const drill = this.state.options.drill || {};
+        return Boolean(drill[model]);
+    }
+
+    /** Open a list (and form) of `model` filtered by `domain`, if the user may read it. */
+    openList(name, model, domain, context = {}) {
+        if (!this.canOpen(model)) {
+            return;
+        }
+        return this.openAction({
+            type: "ir.actions.act_window",
+            name,
+            res_model: model,
+            domain,
+            context: { create: false, ...context },
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+        });
+    }
+
+    /** Domain on a datetime field for the days [from, toExclusive) in the user's time zone. */
+    datetimeDomain(field, from, toExclusive) {
+        return [[field, ">=", utcStartOfDay(from)], [field, "<", utcStartOfDay(toExclusive)]];
+    }
+
+    /** Domain on a date field for the days [from, toExclusive). */
+    dateDomain(field, from, toExclusive) {
+        return [[field, ">=", from], [field, "<", toExclusive]];
+    }
+
+    /** [from, toExclusive) of the whole dashboard range. */
+    get range() {
+        return [this.state.dateFrom, nextDay(this.state.dateTo)];
+    }
+
+    /** [from, toExclusive) of bucket `index` of a time series (`starts` from the server). */
+    bucket(starts, index) {
+        return bucketRange(starts, index, this.state.dateFrom, this.state.dateTo);
+    }
+
     // ---------------- Formatting
     money(value, humanReadable = false) {
         const currencyId = this.state.data ? this.state.data.currency_id : this.state.options.currency_id;
         return formatCurrency(value || 0, currencyId, humanReadable ? { humanReadable: true } : {});
     }
 
+    /** Short money for tiles ("₹ 90.97k"), with the exact amount as `title` (hover). */
+    moneyTile(value) {
+        return { value: this.money(value, true), title: this.money(value) };
+    }
+
     qty(value) {
         return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
-    delta(current, previous) {
+    count(value) {
+        return Number(value || 0).toLocaleString();
+    }
+
+    percent(value) {
+        return `${Math.round((value || 0) * 100)}%`;
+    }
+
+    /**
+     * Comparison with the previous period. Very large swings (from a tiny
+     * previous period) read as noise in %, so show the previous value instead.
+     */
+    delta(current, previous, format = (v) => this.qty(v)) {
         if (!previous) {
             return current ? { text: "New this period", dir: "flat" } : { text: "No change", dir: "flat" };
         }
@@ -195,7 +260,22 @@ export class DashboardBase extends Component {
         if (pct === 0) {
             return { text: "No change vs previous period", dir: "flat" };
         }
-        return { text: `${Math.abs(pct)}% vs previous period`, dir: pct > 0 ? "up" : "down" };
+        const dir = pct > 0 ? "up" : "down";
+        if (Math.abs(pct) >= 200) {
+            return { text: `${dir === "up" ? "Up" : "Down"} from ${format(previous)} last period`, dir };
+        }
+        return { text: `${Math.abs(pct)}% vs previous period`, dir };
+    }
+
+    /** "6 Sep – 5 Oct 2026" for the loaded period. */
+    get periodText() {
+        const p = this.state.data && this.state.data.period;
+        return p ? periodLabel(p.date_from, p.date_to) : "";
+    }
+
+    get previousPeriodText() {
+        const p = this.state.data && this.state.data.period;
+        return p && p.prev_from ? periodLabel(p.prev_from, p.prev_to) : "";
     }
 
     get bucketLabel() {

@@ -25,6 +25,7 @@ EXPIRY_BUCKETS = [
 
 class HospitalInventoryDashboard(models.AbstractModel):
     _name = 'hospital.inventory.dashboard'
+    _inherit = 'hospital.dashboard.mixin'
     _description = 'Inventory Dashboard (Pharmacy)'
 
     # ------------------------------------------------------------------
@@ -48,6 +49,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
             [('company_id', 'in', self._company_ids())], order='sequence, name')
         return {
             'warehouses': [{'id': w.id, 'name': w.name} for w in warehouses],
+            'drill': self._drill_access(['stock.move', 'stock.quant', 'product.template']),
             'currency_id': self.env.company.currency_id.id,
         }
 
@@ -120,6 +122,7 @@ class HospitalInventoryDashboard(models.AbstractModel):
             'expiry_chart': expiry_chart,
             'value_groups': value_groups,
             'pending_picking_ids': pending_pickings,
+            'location_ids': location_ids,
             'lists': {
                 'no_batch': self._cap(no_batch_rows),
                 'expiring': self._cap(expiry_rows),
@@ -310,7 +313,18 @@ class HospitalInventoryDashboard(models.AbstractModel):
                         product, batch=lot['name'], expiry=fields.Date.to_string(lot['expiry'].date()),
                         days=days, qty=lot['qty'], value=value))
         rows.sort(key=lambda r: r['days'])
-        chart = [{'key': key, 'label': label, **buckets[key]} for key, label, *_rest in EXPIRY_BUCKETS]
+        def expiry_dates(key, low, high):
+            # Inclusive expiry-date range of a bucket (same day arithmetic as
+            # _expiry_bucket: days = expiry date - today), for click-through.
+            if key == 'expired':
+                first, last = None, -1
+            else:
+                first, last = (0 if low == 0 else low + 1), high
+            day = lambda n: fields.Date.to_string(today + timedelta(days=n)) if n is not None else False
+            return {'exp_from': day(first), 'exp_to': day(last)}
+
+        chart = [{'key': key, 'label': label, **buckets[key], **expiry_dates(key, low, high)}
+                 for key, label, low, high in EXPIRY_BUCKETS]
         return chart, rows, kpis
 
     @staticmethod
@@ -403,9 +417,10 @@ class HospitalInventoryDashboard(models.AbstractModel):
             labels = [k.strftime('%d %b') for k in keys]
         by_id = {p.id: p for p in products}
         top = sorted(issued_by_product.items(), key=lambda kv: -kv[1])[:TOP_ISSUED]
-        issued_top = [{'name': by_id[pid].display_name, 'qty': qty} for pid, qty in top]
+        issued_top = [{'id': pid, 'name': by_id[pid].display_name, 'qty': qty} for pid, qty in top]
         return {
             'labels': labels,
+            'starts': [fields.Date.to_string(k) for k in keys],
             'received': [round(received[k], 2) for k in keys],
             'issued': [round(issued[k], 2) for k in keys],
             'bucket': kind,
@@ -420,11 +435,15 @@ class HospitalInventoryDashboard(models.AbstractModel):
             tmpl = product.product_tmpl_id
             if scope == 'medicine' and 'medicine_type' in tmpl._fields:
                 label = dict(tmpl._fields['medicine_type'].selection).get(tmpl.medicine_type) or _('Not set')
+                key = ('medicine_type', tmpl.medicine_type or False)
             else:
                 label = product.categ_id.display_name or _('Not set')
-            groups[label] += qty * cost.get(product.id, 0.0)
+                key = ('categ_id', product.categ_id.id or False)
+            groups[(label, key)] += qty * cost.get(product.id, 0.0)
         ranked = sorted(((k, v) for k, v in groups.items() if v), key=lambda kv: -kv[1])
-        result = [{'name': name, 'value': round(value, 2)} for name, value in ranked[:8]]
+        # `domain` lets the client open the products of a group.
+        result = [{'name': label, 'value': round(value, 2), 'domain': [[key[0], '=', key[1]]]}
+                  for (label, key), value in ranked[:8]]
         rest = sum(v for _n, v in ranked[8:])
         if rest:
             result.append({'name': _('Other'), 'value': round(rest, 2)})

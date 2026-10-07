@@ -49,3 +49,10 @@ class TestPurchaseDashboard(TransactionCase):
         self.assertEqual(overdue[self.bill.id]['residual'], 500)
         ageing = {b['key']: b for b in data['ageing']}
         self.assertGreaterEqual(ageing['over30']['amount'], 500)
+        # Click-through: the bucket's due-date range contains the bill's due date.
+        due = fields.Date.to_string(self.bill.invoice_date_due)
+        self.assertLessEqual(ageing['over30']['due_from'], due)
+        self.assertGreaterEqual(ageing['over30']['due_to'], due)
+        vendor = next(v for v in data['top_vendors'] if v['name'] == 'Dash Vendor')
+        self.assertEqual(vendor['id'], self.vendor.id)
+        self.assertEqual(len(data['series']['starts']), len(data['series']['labels']))
