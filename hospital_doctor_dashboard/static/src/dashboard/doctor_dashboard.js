@@ -342,6 +342,21 @@ export class DoctorDashboard extends Component {
         ];
     }
 
+    get procedureTiles() {
+        const k = this.state.data.kpis;
+        return [
+            { key: "procedures", label: "Procedures prescribed", value: this.count(k.procedures),
+              delta: this.delta(k.procedures, k.procedures_prev) },
+            { key: "proc_value", label: "Procedure value", value: this.money(k.procedure_value),
+              delta: this.delta(k.procedure_value, k.procedure_value_prev), hint: "Qty × price on the visits" },
+            { key: "proc_rate", label: "Visits with a procedure", value: this.percent(k.procedure_rate) },
+        ];
+    }
+
+    get hasProcedures() {
+        return this.state.data && this.state.data.kpis.procedures > 0;
+    }
+
     get revenueLegend() {
         const k = this.state.data.kpis;
         const items = [
@@ -437,6 +452,44 @@ export class DoctorDashboard extends Component {
             data: {
                 labels: data.medicines.map((m) => m.name),
                 datasets: [barDataset("Times prescribed", data.medicines.map((m) => m.count), SERIES[0], { maxBarThickness: 20 })],
+            },
+            options: baseOptions({ horizontal: true, format: count }),
+        };
+
+        // ---------------- Procedures
+        const proc = data.procedures;
+        charts.procTop = {
+            type: "bar",
+            data: {
+                labels: proc.top.map((p) => p.name),
+                datasets: [barDataset("Times prescribed", proc.top.map((p) => p.count), SERIES[0], { maxBarThickness: 20 })],
+            },
+            options: baseOptions({ horizontal: true, format: count }),
+        };
+        const valueOptions = baseOptions({ horizontal: true, format: money, tickFormat: moneyShort });
+        valueOptions.layout.padding.right = 90;
+        valueOptions.plugins.hdBarEndLabels.format = moneyShort;
+        charts.procValue = {
+            type: "bar",
+            data: {
+                labels: proc.by_value.map((p) => p.name),
+                datasets: [barDataset("Value", proc.by_value.map((p) => p.value), SERIES[0], { maxBarThickness: 20 })],
+            },
+            options: valueOptions,
+        };
+        charts.procSeries = {
+            type: "bar",
+            data: {
+                labels: proc.series.labels,
+                datasets: [barDataset("Procedures", proc.series.values, SERIES[0])],
+            },
+            options: baseOptions({ format: count }),
+        };
+        charts.procDoctors = {
+            type: "bar",
+            data: {
+                labels: proc.doctors.map((d) => d.name),
+                datasets: [barDataset("Procedures", proc.doctors.map((d) => d.count), SERIES[0], { maxBarThickness: 20 })],
             },
             options: baseOptions({ horizontal: true, format: count }),
         };

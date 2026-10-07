@@ -9,6 +9,7 @@ from odoo.exceptions import UserError
 MAX_RANGE_DAYS = 731
 TOP_DOCTORS = 8
 TOP_MEDICINES = 10
+TOP_PROCEDURES = 10
 
 STATUS_LABELS = [
     ('draft', 'Draft'),
@@ -56,6 +57,8 @@ class HospitalDoctorDashboard(models.AbstractModel):
     @api.model
     def get_dashboard_data(self, date_from, date_to, company_ids=None, doctor_id=False):
         self._check_doctor_access()
+        # The data below is read with SQL: write pending ORM changes first.
+        self.env.flush_all()
         d_from = fields.Date.to_date(date_from)
         d_to = fields.Date.to_date(date_to)
         if not d_from or not d_to or d_from > d_to:
@@ -73,7 +76,7 @@ class HospitalDoctorDashboard(models.AbstractModel):
         previous = self._collect(prev_from, prev_to, company_ids, doctor_id, detailed=False)
 
         kpis = current.pop('kpis')
-        for key in ('visits', 'patients', 'new_patients', 'revenue_total'):
+        for key in ('visits', 'patients', 'new_patients', 'revenue_total', 'procedures', 'procedure_value'):
             kpis[key + '_prev'] = previous['kpis'][key]
 
         currency = self.env['res.company'].browse(company_ids[0]).currency_id
@@ -184,11 +187,27 @@ class HospitalDoctorDashboard(models.AbstractModel):
             'revenue_other': revenue['other'],
             'avg_revenue_per_visit': revenue_total / len(active) if active else 0.0,
         }
+
+        # ---------------- Procedures (prescribed on the visits above)
+        ticket_ids = [t['id'] for t in active]
+        procedure_lines = []
+        if ticket_ids:
+            cr.execute("""
+                SELECT op_ticket_id, product_id, COALESCE(qty, 0) AS qty, COALESCE(subtotal, 0) AS value
+                  FROM op_procedure_line
+                 WHERE op_ticket_id = ANY(%s) AND product_id IS NOT NULL
+            """, [ticket_ids])
+            procedure_lines = cr.dictfetchall()
+        kpis.update({
+            'procedures': len(procedure_lines),
+            'procedure_value': sum(line['value'] for line in procedure_lines),
+            'procedure_rate': (len({line['op_ticket_id'] for line in procedure_lines}) / len(active)
+                               if active else 0.0),
+        })
         if not detailed:
             return {'kpis': kpis}
 
         # ---------------- Prescriptions
-        ticket_ids = [t['id'] for t in active]
         medicines, with_rx = [], 0
         if ticket_ids:
             cr.execute("""
@@ -248,6 +267,8 @@ class HospitalDoctorDashboard(models.AbstractModel):
         if rest:
             doctors.append({'name': _('Other doctors'), 'visits': rest})
 
+        procedures = self._procedure_stats(procedure_lines, active, keys, kind, doctor_names)
+
         # ---------------- Status & patient mix
         status_counts = Counter(t['state'] for t in tickets)
         status = [{'key': k, 'label': lbl, 'count': status_counts.get(k, 0)} for k, lbl in STATUS_LABELS]
@@ -268,12 +289,56 @@ class HospitalDoctorDashboard(models.AbstractModel):
             'hours_series': hours_series,
             'doctors': doctors,
             'medicines': medicines,
+            'procedures': procedures,
             'status': status,
             'mix': {
                 'gender': mix('gender', GENDER_LABELS),
                 'mode': mix('visit_mode', MODE_LABELS),
                 'type': mix('patient_type', TYPE_LABELS),
             },
+        }
+
+    def _procedure_stats(self, lines, active, keys, kind, doctor_names):
+        """ Procedure charts: most prescribed, value, over time, by doctor and
+        by patient gender. `lines` are the procedure lines of `active` visits. """
+        tickets = {t['id']: t for t in active}
+        per_product = defaultdict(lambda: {'count': 0, 'qty': 0.0, 'value': 0.0, 'patients': set()})
+        over_time, by_doctor, by_gender = Counter(), Counter(), Counter()
+        for line in lines:
+            ticket = tickets[line['op_ticket_id']]
+            row = per_product[line['product_id']]
+            row['count'] += 1
+            row['qty'] += line['qty']
+            row['value'] += line['value']
+            row['patients'].add(ticket['patient_id'])
+            over_time[self._bucket_start(ticket['local_dt'].date(), kind)] += 1
+            by_doctor[ticket['doctor_id']] += 1
+            by_gender[ticket['gender'] or 'unset'] += 1
+
+        products = self.env['product.product'].sudo().browse(list(per_product))
+        names = {p.id: p.display_name for p in products}
+        rows = [{
+            'name': names.get(pid, ''),
+            'count': v['count'],
+            'qty': v['qty'],
+            'value': round(v['value'], 2),
+            'patients': len(v['patients']),
+        } for pid, v in per_product.items()]
+
+        doctors = [{'name': doctor_names.get(did) or self.env['hr.employee'].sudo().browse(did).name, 'count': n}
+                   for did, n in by_doctor.most_common()]
+        gender = [{'label': lbl, 'count': by_gender.get(k, 0)} for k, lbl in GENDER_LABELS.items()]
+        if by_gender.get('unset'):
+            gender.append({'label': _('Not set'), 'count': by_gender['unset']})
+        return {
+            'top': sorted(rows, key=lambda r: (-r['count'], -r['value']))[:TOP_PROCEDURES],
+            'by_value': sorted(rows, key=lambda r: -r['value'])[:TOP_PROCEDURES],
+            'series': {
+                'labels': [self._bucket_label(k, kind) for k in keys],
+                'values': [over_time.get(k, 0) for k in keys],
+            },
+            'doctors': self._top(doctors, 'count', TOP_DOCTORS, _('Other doctors')),
+            'gender': gender,
         }
 
     @staticmethod

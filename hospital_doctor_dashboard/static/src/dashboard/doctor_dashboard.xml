@@ -260,6 +260,127 @@
                                 </t>
                             </div>
                         </div>
+
+                        <!-- ============ Procedures ============ -->
+                        <h2 class="o_hd_section_title"><i class="fa fa-stethoscope me-2" aria-hidden="true"/>Procedures</h2>
+                        <div class="o_hd_kpis o_hd_kpis3">
+                            <t t-foreach="procedureTiles" t-as="tile" t-key="tile.key">
+                                <div class="o_hd_card o_hd_kpi">
+                                    <div class="o_hd_kpi_label" t-esc="tile.label"/>
+                                    <div class="o_hd_kpi_value" t-esc="tile.value"/>
+                                    <div t-if="tile.delta" t-att-class="'o_hd_delta o_hd_delta_' + tile.delta.dir">
+                                        <i t-if="tile.delta.dir === 'up'" class="fa fa-arrow-up me-1" aria-hidden="true"/>
+                                        <i t-if="tile.delta.dir === 'down'" class="fa fa-arrow-down me-1" aria-hidden="true"/>
+                                        <t t-esc="tile.delta.text"/>
+                                    </div>
+                                    <div t-if="tile.hint" class="o_hd_kpi_hint" t-esc="tile.hint"/>
+                                </div>
+                            </t>
+                        </div>
+
+                        <div class="o_hd_grid">
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Most prescribed procedures</t>
+                                    <t t-set="subtitle">Number of times prescribed</t>
+                                    <t t-set="tableKey" t-value="'procTop'"/>
+                                </t>
+                                <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
+                                <t t-elif="state.tables.procTop">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Procedure</th><th class="text-end">Times</th><th class="text-end">Qty</th>
+                                            <th class="text-end">Patients</th><th class="text-end">Value</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.procedures.top" t-as="p" t-key="p_index">
+                                            <td t-esc="p.name"/><td class="text-end" t-esc="count(p.count)"/>
+                                            <td class="text-end" t-esc="count(p.qty)"/><td class="text-end" t-esc="count(p.patients)"/>
+                                            <td class="text-end" t-esc="money(p.value)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.procTop" label="'Most prescribed procedures'"
+                                           height="chartHeight(state.data.procedures.top.length)"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Procedure value</t>
+                                    <t t-set="subtitle">Qty × price prescribed, by procedure</t>
+                                    <t t-set="tableKey" t-value="'procValue'"/>
+                                </t>
+                                <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
+                                <t t-elif="state.tables.procValue">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Procedure</th><th class="text-end">Value</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.procedures.by_value" t-as="p" t-key="p_index">
+                                            <td t-esc="p.name"/><td class="text-end" t-esc="money(p.value)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.procValue" label="'Procedure value'"
+                                           height="chartHeight(state.data.procedures.by_value.length)"/>
+                            </div>
+
+                            <div class="o_hd_card o_hd_span2">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Procedures over time</t>
+                                    <t t-set="subtitle" t-value="'Procedures prescribed ' + bucketLabel"/>
+                                    <t t-set="tableKey" t-value="'procSeries'"/>
+                                </t>
+                                <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
+                                <t t-elif="state.tables.procSeries">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Period</th><th class="text-end">Procedures</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.procedures.series.labels" t-as="lbl" t-key="lbl_index">
+                                            <td t-esc="lbl"/><td class="text-end" t-esc="count(state.data.procedures.series.values[lbl_index])"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.procSeries" label="'Procedures ' + bucketLabel" height="220"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <t t-call="hospital_doctor_dashboard.CardHead">
+                                    <t t-set="title">Procedures by doctor</t>
+                                    <t t-set="tableKey" t-value="'procDoctors'"/>
+                                </t>
+                                <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
+                                <t t-elif="state.tables.procDoctors">
+                                    <div class="o_hd_table_wrap"><table class="table table-sm o_hd_table">
+                                        <thead><tr><th>Doctor</th><th class="text-end">Procedures</th></tr></thead>
+                                        <tbody><tr t-foreach="state.data.procedures.doctors" t-as="d" t-key="d_index">
+                                            <td t-esc="d.name"/><td class="text-end" t-esc="count(d.count)"/>
+                                        </tr></tbody>
+                                    </table></div>
+                                </t>
+                                <DashChart t-else="" config="charts.procDoctors" label="'Procedures by doctor'"
+                                           height="chartHeight(state.data.procedures.doctors.length)"/>
+                            </div>
+
+                            <div class="o_hd_card">
+                                <h3 class="o_hd_card_title">Procedure patients</h3>
+                                <div class="o_hd_card_sub">Procedures by patient gender</div>
+                                <t t-if="!hasProcedures"><div class="o_hd_empty">No procedures in this period</div></t>
+                                <div t-else="" class="o_hd_mix">
+                                    <div class="o_hd_mix_bar" role="img" aria-label="Procedures by patient gender">
+                                        <t t-foreach="mixRows(state.data.procedures.gender)" t-as="row" t-key="row.label">
+                                            <span class="o_hd_mix_seg"
+                                                  t-att-style="'flex-grow:' + row.count + ';background:' + row.color"
+                                                  t-att-title="row.label + ': ' + row.count + ' (' + percent(row.pct) + ')'"/>
+                                        </t>
+                                    </div>
+                                    <div class="o_hd_mix_labels">
+                                        <t t-foreach="mixRows(state.data.procedures.gender)" t-as="row" t-key="row.label">
+                                            <span class="o_hd_legend_item">
+                                                <span class="o_hd_swatch" t-att-style="'background:' + row.color"/>
+                                                <t t-esc="row.label"/>
+                                                <strong class="ms-1" t-esc="percent(row.pct)"/>
+                                                <span class="o_hd_muted ms-1">(<t t-esc="count(row.count)"/>)</span>
+                                            </span>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </t>
             </div>
