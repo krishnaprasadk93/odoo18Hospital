@@ -1,6 +1,6 @@
 {
     'name': 'Hospital Management',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'author': 'Krishnaprasad K',
     'category': 'Healthcare',
     'summary': 'Complete Hospital Management System',
@@ -31,6 +31,7 @@
     'assets': {
         'web.assets_backend': [
              'hospital_management/static/src/css/prescription.css',
+             'hospital_management/static/src/scss/clinic.scss',
              'hospital_management/static/src/js/dose_select_focus.js',
         ],
     },
