@@ -67,3 +67,29 @@ class TestDoctorDashboard(TransactionCase):
         data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
             self.today, self.today, doctor_id=self.doctor.id)
         self.assertEqual(data['kpis']['visits'], 2)
+
+    def test_procedures(self):
+        procedure = self.env['product.product'].create({
+            'name': 'Dash Dressing', 'type': 'service', 'is_procedure': True, 'list_price': 150})
+        first, second = self.tickets[:2]
+        self.env['op.procedure.line'].create([
+            {'op_ticket_id': first.id, 'product_id': procedure.id, 'qty': 2, 'price_unit': 150},
+            {'op_ticket_id': second.id, 'product_id': procedure.id, 'qty': 1, 'price_unit': 150},
+        ])
+        # Procedures on a cancelled visit are not counted.
+        self.env['op.procedure.line'].create(
+            {'op_ticket_id': self.tickets[2].id, 'product_id': procedure.id, 'qty': 5, 'price_unit': 150})
+        data = self.Dashboard.with_user(self.doctor_user).get_dashboard_data(
+            self.today, self.today, doctor_id=self.doctor.id)
+        kpis = data['kpis']
+        self.assertEqual(kpis['procedures'], 2)
+        self.assertEqual(kpis['procedure_value'], 450)
+        self.assertEqual(kpis['procedure_rate'], 1.0)
+        self.assertEqual(kpis['procedures_prev'], 0)
+        top = data['procedures']['top'][0]
+        self.assertEqual((top['name'], top['count'], top['qty'], top['patients'], top['value']),
+                         ('Dash Dressing', 2, 3, 1, 450))
+        self.assertEqual(sum(data['procedures']['series']['values']), 2)
+        self.assertEqual(data['procedures']['doctors'], [{'name': 'Dr Dash', 'count': 2}])
+        gender = {g['label']: g['count'] for g in data['procedures']['gender']}
+        self.assertEqual(gender['Female'], 2)
