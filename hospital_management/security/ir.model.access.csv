@@ -17,3 +17,5 @@ access_consultation_payment_wizard_doctor,consultation.payment.wizard.doc,model_
 access_medicine_purchase_wizard_pharmacist,medicine.purchase.wizard.pharm,model_medicine_purchase_wizard,group_hospital_pharmacist,1,1,1,1
 access_medicine_purchase_wizard_user,medicine.purchase.wizard.user,model_medicine_purchase_wizard,base.group_user,1,1,1,1
 access_res_config_settings_hospital,res.config.settings.hospital,model_res_config_settings,base.group_system,1,1,1,1
+access_hospital_dose_preset_user,hospital.dose.preset.user,model_hospital_dose_preset,base.group_user,1,0,0,0
+access_hospital_dose_preset_doctor,hospital.dose.preset.doctor,model_hospital_dose_preset,hospital_management.group_hospital_doctor,1,1,1,1

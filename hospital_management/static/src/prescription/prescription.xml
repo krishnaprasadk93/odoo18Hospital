@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hospital_management.DoseField">
+        <span t-if="props.readonly" class="o_hc_dose_value" t-att-class="{ o_hc_dose_zero: isZero }">
+            <t t-esc="displayValue"/><span t-if="!isZero and unitLabel" class="o_hc_dose_unit" t-esc="unitLabel"/>
+        </span>
+        <div t-else="" class="o_hc_dose" t-ref="doseWrap">
+            <t t-call="web.FloatField"/>
+            <!-- Floating bar while the dose is being edited: −, quick doses, + -->
+            <div t-if="state.hasFocus" class="o_hc_dose_pop" t-att-style="popStyle">
+                <button type="button" class="o_hc_dose_btn" tabindex="-1" aria-label="Decrease dose"
+                        t-on-mousedown.prevent="() => this.increment(-1)">−</button>
+                <button t-foreach="quickDoses" t-as="dose" t-key="dose_index" type="button"
+                        class="o_hc_dose_chip" tabindex="-1"
+                        t-on-mousedown.prevent="() => this.setDose(dose)"
+                        t-esc="chipLabel(dose)"/>
+                <button type="button" class="o_hc_dose_btn" tabindex="-1" aria-label="Increase dose"
+                        t-on-mousedown.prevent="() => this.increment(1)">+</button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="hospital_management.StatusDot">
+        <span t-if="value" class="o_hc_dot" t-attf-class="o_hc_dot_{{ value }}" t-att-title="label"
+              role="img" t-att-aria-label="label"/>
+    </t>
+
+    <t t-name="hospital_management.QuickMedicines">
+        <div t-if="state.medicines.length and !props.readonly" class="o_hc_quick_meds">
+            <span class="o_hc_quick_meds_label"><i class="fa fa-bolt" title="Quick add"/> Quick add</span>
+            <button t-foreach="state.medicines" t-as="medicine" t-key="medicine.id" type="button"
+                    class="o_hc_quick_med" t-att-class="{ o_hc_quick_med_added: isAdded(medicine) }"
+                    t-att-disabled="state.adding" t-on-click="() => this.add(medicine)">
+                <i t-if="isAdded(medicine)" class="fa fa-check" title="Added"/>
+                <t t-esc="medicine.name"/>
+            </button>
+        </div>
+    </t>
+
+</templates>

@@ -69,6 +69,18 @@ class PrescriptionLine(models.Model):
 
     dosage_pattern = fields.Char(string='Dosage', compute='_compute_dosage_pattern', store=True)
 
+    # Tablet-friendly entry (display helpers, not stored): +/- step and one-tap
+    # dose chips from the medicine (or its type preset), and a stock dot.
+    dose_step = fields.Float(string='Dose Step', compute='_compute_dose_entry')
+    dose_quick_values = fields.Char(string='Quick Doses', compute='_compute_dose_entry')
+    dose_fraction = fields.Boolean(string='Show Fractions', compute='_compute_dose_entry')
+    dose_summary = fields.Char(string='Dose', compute='_compute_dose_summary')
+    stock_state = fields.Selection([
+        ('ok', 'In stock'),
+        ('low', 'Low stock'),
+        ('out', 'Not enough stock'),
+    ], string='Stock', compute='_compute_stock_state')
+
     @api.depends('medicine_id', 'medicine_id.medicine_type')
     def _compute_dose_unit(self):
         """Auto-set dose unit based on medicine type"""
@@ -149,6 +161,48 @@ class PrescriptionLine(models.Model):
             unit_label = dict(rec._fields['dose_unit'].selection).get(rec.dose_unit, '')
 
             rec.dosage_pattern = f"{morning}-{afternoon}-{evening} {unit_label}"
+
+    @api.depends('medicine_id', 'medicine_id.medicine_type', 'medicine_id.dose_step',
+                 'medicine_id.dose_quick_values')
+    def _compute_dose_entry(self):
+        Preset = self.env['hospital.dose.preset']
+        for rec in self:
+            medicine = rec.medicine_id
+            med_type = medicine.medicine_type or False
+            step, quick = Preset._get_for_type(med_type)
+            rec.dose_step = medicine.dose_step or step
+            rec.dose_quick_values = medicine.dose_quick_values or quick
+            rec.dose_fraction = med_type in ('tablet', 'capsule')
+
+    @api.depends('morning_dose', 'afternoon_dose', 'evening_dose', 'dose_unit', 'dose_fraction')
+    def _compute_dose_summary(self):
+        """ Screen summary like "1½ – 0 – ½ tab" or "0.3 – 0 – 0.6 ml". """
+        for rec in self:
+            fmt = rec._format_dose_fraction if rec.dose_fraction else rec._format_dose
+            unit_label = dict(rec._fields['dose_unit'].selection).get(rec.dose_unit, '')
+            doses = ' – '.join(fmt(d or 0.0) for d in (rec.morning_dose, rec.afternoon_dose, rec.evening_dose))
+            rec.dose_summary = f"{doses} {unit_label}".strip()
+
+    def _format_dose_fraction(self, dose):
+        """ Tablets / capsules: 0.5 -> ½, 1.5 -> 1½, 0.25 -> ¼; other values as decimals. """
+        fractions = {0.25: '¼', 0.5: '½', 0.75: '¾'}
+        whole = int(dose)
+        part = round(dose - whole, 2)
+        if part in fractions:
+            return (str(whole) if whole else '') + fractions[part]
+        return self._format_dose(dose)
+
+    @api.depends('is_out_of_stock', 'forecasted_qty', 'quantity', 'medicine_id')
+    def _compute_stock_state(self):
+        for rec in self:
+            if not rec.medicine_id:
+                rec.stock_state = False
+            elif rec.is_out_of_stock:
+                rec.stock_state = 'out'
+            elif rec.forecasted_qty < rec.quantity * 2:
+                rec.stock_state = 'low'
+            else:
+                rec.stock_state = 'ok'
 
     def _format_dose(self, dose):
         """Format dose value - remove trailing zeros for decimals"""

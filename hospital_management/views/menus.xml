@@ -76,6 +76,7 @@
 
     <menuitem id="menu_doctor_queue" name="My Queue" parent="menu_doctor_root" action="action_doctor_queue" sequence="1"/>
     <menuitem id="menu_doctor_consultation" name="Consultations" parent="menu_doctor_root" action="action_doctor_dashboard" sequence="5"/>
+    <menuitem id="menu_doctor_dose_presets" name="Dose Presets" parent="menu_doctor_root" action="action_hospital_dose_preset" sequence="90"/>
 
     <record id="action_pharmacy_dashboard" model="ir.actions.act_window">
         <field name="name">Pharmacy Queue</field>

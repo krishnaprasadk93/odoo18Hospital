@@ -3,6 +3,7 @@ from . import patient
 from . import prescription_line
 from . import medicine_brand
 from . import hospital_pharmacy
+from . import dose_preset
 from . import product_template
 from . import account_move
 from . import sale_order

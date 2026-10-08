@@ -34,6 +34,10 @@
                             invisible="state != 'consulting' or consulting_state != 'completed'" class="btn-primary"
                             groups="hospital_management.group_hospital_doctor"/>
 
+                    <button name="action_next_patient" string="Next Patient" type="object" icon="fa-forward"
+                            invisible="state not in ('pharmacy', 'done')" class="btn-secondary"
+                            groups="hospital_management.group_hospital_doctor"/>
+
                     <!-- PHARMACY -->
                     <button name="action_create_pharmacy_sale" string="Create Sale Order" type="object"
                             invisible="not (state in ('pharmacy', 'done') and pharmacy_state == 'pending')" class="btn-primary"
@@ -158,7 +162,9 @@
                     </group>
                     <field name="consultation_invoice_id" invisible="1"/>
 
-                    <!-- Doctor's notes, side by side -->
+                    <!-- Consultation: notes beside the prescription on laptops / landscape tablets,
+                         stacked with the prescription first on portrait tablets -->
+                    <div class="o_hc_consult">
                     <div class="o_hc_clinical" groups="hospital_management.group_hospital_doctor">
                         <div>
                             <div class="o_hc_section">Diagnosis</div>
@@ -175,6 +181,8 @@
 
                     <notebook>
                         <page string="Prescription" name="prescription">
+                            <widget name="hc_quick_medicines" invisible="state != 'consulting'"
+                                    groups="hospital_management.group_hospital_doctor"/>
                              <div class="mb-2" invisible="not has_previous_prescription">
                                <button name="action_copy_last_prescription"
                                 type="object"
@@ -187,10 +195,7 @@
     <field name="has_previous_prescription" invisible="1"/>
 
    <field name="prescription_ids">
-    <list editable="bottom"
-          decoration-danger="is_out_of_stock == True"
-          decoration-warning="is_out_of_stock == False and forecasted_qty &lt; quantity * 2"
-          class="o_prescription_list">
+    <list editable="bottom" class="o_prescription_list">
 
         <!-- Medicine -->
         <field name="medicine_id"
@@ -200,45 +205,47 @@
                string="Medicine"/>
 
         <!-- Unit badge — shown once per row, auto from medicine type -->
-        <field name="dose_unit"
+        <field name="dose_unit" optional="hide"
                widget="badge"
                string="Unit"
                readonly="1"
                options="{'color_field': 'dose_unit'}"/>
 
         <!-- Dose fields — direct Float, select-on-focus JS handles clear -->
-        <field name="morning_dose"
+        <field name="morning_dose" width="72px"
                string="Morning"
-               widget="float"
+               widget="hc_dose"
                options='{"digits": [16, 2]}'
                class="o_dose_cell"/>
 
-        <field name="afternoon_dose"
+        <field name="afternoon_dose" width="72px"
                string="Afternoon"
-               widget="float"
+               widget="hc_dose"
                options='{"digits": [16, 2]}'
                class="o_dose_cell"/>
 
-        <field name="evening_dose"
+        <field name="evening_dose" width="72px"
                string="Evening"
-               widget="float"
+               widget="hc_dose"
                options='{"digits": [16, 2]}'
                class="o_dose_cell"/>
 
         <!-- Duration -->
-        <field name="duration_number" string="For"/>
-        <field name="duration_type" string="Period"/>
+        <field name="duration_number" string="For" width="48px"/>
+        <field name="duration_type" string="Period" width="80px"/>
 
         <!-- When to take -->
-        <field name="instruction" string="When"/>
+        <field name="instruction" string="When" width="100px"/>
 
         <!-- Quantity auto-calc -->
-        <field name="quantity" string="Qty"  widget="float"
+        <field name="quantity" string="Qty" width="72px" widget="float"
                options='{"digits": [16, 2]}'
                class="o_dose_cell" readonly="0"/>
 
-        <!-- Stock status -->
-        <field name="stock_status" string="Stock" readonly="1"/>
+        <!-- Stock: green / amber / red dot (details on hover and in the optional column) -->
+        <field name="stock_state" string="Stock" widget="hc_status_dot" readonly="1" width="36px"/>
+        <field name="stock_status" string="Stock Detail" readonly="1" optional="hide"/>
+        <field name="dose_summary" string="Dose" optional="hide"/>
 
         <!-- Notes optional -->
         <field name="notes" optional="hide" placeholder="Special instructions..."/>
@@ -306,6 +313,20 @@
                             </group>
                         </page> -->
                     </notebook>
+                    </div>
+
+                    <!-- Big thumb-reach action bar on touch screens (tablets); hidden with a mouse -->
+                    <div class="o_hc_action_bar" groups="hospital_management.group_hospital_doctor"
+                         invisible="state not in ('op', 'consulting', 'pharmacy', 'done')">
+                        <button name="action_start_consult" string="Start Consultation" type="object"
+                                invisible="state != 'op'" class="btn-primary"/>
+                        <button name="action_complete_consult" string="Complete Consultation" type="object"
+                                invisible="state != 'consulting' or consulting_state != 'started'" class="btn-primary"/>
+                        <button name="action_send_to_pharmacy" string="Send to Pharmacy" type="object"
+                                invisible="state != 'consulting' or consulting_state != 'completed'" class="btn-primary"/>
+                        <button name="action_next_patient" string="Next Patient" type="object" icon="fa-forward"
+                                invisible="state not in ('pharmacy', 'done')" class="btn-primary"/>
+                    </div>
                 </sheet>
                <!-- <chatter />-->
             </form>

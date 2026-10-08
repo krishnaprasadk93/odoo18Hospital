@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Default +/- steps and quick-dose chips per medicine type (editable under Doctor > Dose Presets). -->
+    <record id="dose_preset_tablet" model="hospital.dose.preset">
+        <field name="medicine_type">tablet</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,1.5,2</field>
+    </record>
+    <record id="dose_preset_capsule" model="hospital.dose.preset">
+        <field name="medicine_type">capsule</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,1.5,2</field>
+    </record>
+    <record id="dose_preset_syrup" model="hospital.dose.preset">
+        <field name="medicine_type">syrup</field><field name="dose_step">0.3</field><field name="quick_doses">0.3,0.6,0.9,1.2,2.5,5</field>
+    </record>
+    <record id="dose_preset_kashayam" model="hospital.dose.preset">
+        <field name="medicine_type">kashayam</field><field name="dose_step">0.3</field><field name="quick_doses">0.3,0.6,0.9,1.2,2.5,5</field>
+    </record>
+    <record id="dose_preset_drops" model="hospital.dose.preset">
+        <field name="medicine_type">drops</field><field name="dose_step">1</field><field name="quick_doses">1,2,3,5</field>
+    </record>
+    <record id="dose_preset_choornam" model="hospital.dose.preset">
+        <field name="medicine_type">choornam</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_powder" model="hospital.dose.preset">
+        <field name="medicine_type">powder</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_leham" model="hospital.dose.preset">
+        <field name="medicine_type">leham</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_oil" model="hospital.dose.preset">
+        <field name="medicine_type">oil</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_lotion" model="hospital.dose.preset">
+        <field name="medicine_type">lotion</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_serum" model="hospital.dose.preset">
+        <field name="medicine_type">serum</field><field name="dose_step">0.5</field><field name="quick_doses">0.5,1,2,5</field>
+    </record>
+    <record id="dose_preset_ointment" model="hospital.dose.preset">
+        <field name="medicine_type">ointment</field><field name="dose_step">1</field><field name="quick_doses">1,2</field>
+    </record>
+    <record id="dose_preset_cream" model="hospital.dose.preset">
+        <field name="medicine_type">cream</field><field name="dose_step">1</field><field name="quick_doses">1,2</field>
+    </record>
+    <record id="dose_preset_spray" model="hospital.dose.preset">
+        <field name="medicine_type">spray</field><field name="dose_step">1</field><field name="quick_doses">1,2</field>
+    </record>
+</odoo>
