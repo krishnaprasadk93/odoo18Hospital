@@ -715,6 +715,65 @@ class HospitalOpTicket(models.Model):
                 'context': {'search_default_filter_low_stock': 1, 'search_default_filter_out_of_stock': 1}})
         return {'tiles': tiles, 'date': fields.Date.to_string(tz_today), 'user': user.name}
 
+    def _today_bounds_utc(self):
+        start = fields.Datetime.context_timestamp(self, fields.Datetime.now()).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        start_utc = start.astimezone(pytz.utc).replace(tzinfo=None)
+        return start_utc, start_utc + timedelta(days=1)
+
+    def action_next_patient(self):
+        """ Open the next patient waiting for the same doctor today (lowest token first). """
+        self.ensure_one()
+        start, end = self._today_bounds_utc()
+        waiting = self.search([
+            ('id', '!=', self.id),
+            ('doctor_id', '=', self.doctor_id.id),
+            ('appointment_date', '>=', start),
+            ('appointment_date', '<', end),
+            '|', ('state', '=', 'op'),
+            '&', ('state', '=', 'consulting'), ('consulting_state', '!=', 'completed'),
+        ], order='token_number, appointment_date, id', limit=1)
+        if not waiting:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No more patients'),
+                    'message': _('Nobody else is waiting for %s today.', self.doctor_id.name),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Consultation'),
+            'res_model': 'hospital.op.ticket',
+            'res_id': waiting.id,
+            'view_mode': 'form',
+            'views': [(False, 'form')],
+            'target': 'current',
+        }
+
+    def get_quick_medicines(self, limit=10):
+        """ The doctor's most prescribed medicines (last 180 days), for one-tap adding. """
+        self.ensure_one()
+        since = fields.Datetime.now() - timedelta(days=180)
+        Line = self.env['prescription.line']
+        domain = [('create_date', '>=', since), ('medicine_id.active', '=', True)]
+        groups = []
+        if self.doctor_id:
+            groups = Line._read_group(domain + [('op_ticket_id.doctor_id', '=', self.doctor_id.id)],
+                                      ['medicine_id'], ['__count'], order='__count desc', limit=limit)
+        if len(groups) < limit:
+            # Top up with the clinic's most used medicines
+            seen = {medicine.id for medicine, _count in groups}
+            extra = Line._read_group(domain + [('medicine_id', 'not in', list(seen))],
+                                     ['medicine_id'], ['__count'], order='__count desc',
+                                     limit=limit - len(groups))
+            groups += extra
+        return [{'id': medicine.id, 'name': medicine.name, 'type': medicine.medicine_type or ''}
+                for medicine, _count in groups if medicine]
+
     @api.model
     def _expand_states(self, states, domain):
         # Queue board: always show the active stages; cancelled only when it has visits.

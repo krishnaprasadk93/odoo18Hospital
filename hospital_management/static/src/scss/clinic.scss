@@ -335,6 +335,160 @@ $hc-soft: rgba($hc-accent, .07);
     .o_hc_home_empty { color: $hc-muted; .fa { font-size: 28px; } }
 }
 
+// ---------- consultation layout (visit form)
+// Laptops / landscape tablets: notes (left) beside the prescription (right).
+// Narrower screens: one column with the prescription first.
+.o_hc_form .o_hc_consult {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    > .o_notebook { order: -1; }
+    .o_hc_clinical { margin: 0; }
+}
+// Side by side only where the full prescription row fits next to the notes:
+// laptops/desktops with a mouse from 1360px. Tablets keep the full-width,
+// prescription-first layout so the touch-size dose buttons have room.
+@media (min-width: 1360px) and (hover: hover) and (pointer: fine) {
+    .o_hc_form .o_hc_consult:has(> .o_hc_clinical) {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr);
+        align-items: start;
+        > .o_notebook { order: 0; }
+        .o_hc_clinical { grid-template-columns: 1fr; gap: 16px; }
+    }
+}
+
+// ---------- prescription: dose stepper, quick doses, stock dot
+.o_prescription_list {
+    .o_dose_cell { max-width: none; }
+    .o_hc_dose_unit { margin-left: 3px; font-size: 11px; font-weight: 400; color: $hc-muted; }
+    .o_hc_dose input { text-align: center; font-weight: 600; }
+    .o_hc_dose_pop {
+        position: fixed;
+        z-index: 1060;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+        border: 1px solid $hc-border;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .16);
+        white-space: nowrap;
+    }
+    .o_hc_dose_btn {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid $hc-border;
+        border-radius: 8px;
+        background: #fff;
+        color: darken($hc-accent, 8%);
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1;
+        &:hover { border-color: $hc-accent; background: $hc-soft; }
+    }
+    .o_hc_dose_chip {
+        min-width: 40px;
+        height: 32px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 999px;
+        background: $hc-soft;
+        color: darken($hc-accent, 8%);
+        font-weight: 600;
+        &:hover { background: rgba($hc-accent, .18); }
+    }
+    .o_hc_dose_value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .o_hc_dose_zero { color: #adb5bd; font-weight: 400; }
+}
+.o_hc_dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    vertical-align: middle;
+    &.o_hc_dot_ok { background: #1f9d55; }
+    &.o_hc_dot_low { background: #f59e0b; }
+    &.o_hc_dot_out { background: $danger; }
+}
+
+// Quick-add medicine chips above the prescription
+.o_hc_quick_meds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    .o_hc_quick_meds_label { font-size: 12px; font-weight: 600; color: $hc-muted; margin-right: 2px; }
+}
+.o_hc_quick_med {
+    padding: 4px 12px;
+    border: 1px solid $hc-border;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    &:hover { border-color: $hc-accent; background: $hc-soft; }
+    &.o_hc_quick_med_added { border-color: $hc-accent; background: $hc-soft; color: darken($hc-accent, 8%); }
+    .fa { margin-right: 4px; }
+}
+
+// Thumb-reach action bar: only on touch screens (tablets / phones)
+.o_hc_form .o_hc_action_bar { display: none; }
+@media (hover: none) and (pointer: coarse) {
+    .o_hc_form .o_hc_action_bar:not(.o_invisible_modifier) {
+        position: sticky;
+        bottom: 0;
+        z-index: 15;
+        display: flex;
+        gap: 12px;
+        margin: 16px -16px -16px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, .96);
+        border-top: 1px solid $hc-border;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, .06);
+        .btn { flex: 1 1 0; min-height: 52px; font-size: 17px; font-weight: 600; border-radius: 10px; }
+        .btn.o_invisible_modifier, .btn.d-none { display: none; }
+    }
+}
+
+// ---------- bigger tap targets on touch screens (11)
+@media (hover: none) and (pointer: coarse) {
+    .o_form_view .o_form_statusbar .o_statusbar_buttons .btn,
+    .o_control_panel .btn,
+    .o_hc_form .btn,
+    .o_hc_pay .btn { min-height: 44px; }
+    .o_hc_form {
+        .o_field_widget input.o_input, .o_field_widget select.o_input { min-height: 40px; font-size: 16px; }
+        .o_notebook .nav-link { min-height: 44px; display: flex; align-items: center; padding-inline: 18px; }
+        .o_radio_input, .form-check-input { width: 22px; height: 22px; }
+        .o_field_radio .o_radio_item { min-height: 40px; align-items: center; }
+        .o_hc_chip { padding: 6px 12px; font-size: 14px; }
+    }
+    .o_prescription_list {
+        .o_data_row > td { height: 52px; vertical-align: middle; }
+        .o_hc_dose input { min-height: 40px; font-size: 17px; }
+        .o_hc_dose_pop { gap: 8px; padding: 8px; }
+        .o_hc_dose_btn { width: 48px; height: 48px; font-size: 24px; }
+        .o_hc_dose_chip { min-width: 52px; height: 48px; font-size: 17px; }
+        .o_field_x2many_list_row_add a, .o_list_record_remove { padding: 10px 6px; }
+    }
+    // Portrait tablets: hide the rarely changed Period and the auto-calculated Qty
+    @media (max-width: 900px) {
+        .o_prescription_list {
+            th[data-name="duration_type"], td[name="duration_type"],
+            th[data-name="quantity"], td[name="quantity"] { display: none !important; }
+            table { width: 100% !important; }
+        }
+    }
+    .o_hc_quick_med { min-height: 40px; padding: 6px 16px; font-size: 15px; }
+    .o_hc_queue .o_kanban_record { min-height: 104px; }
+    .o_list_renderer .o_data_row > td { height: 48px; vertical-align: middle; }
+    .o_hc_home .o_hc_home_tile { min-height: 120px; }
+}
+
 // ---------- phones and tablets
 @include media-breakpoint-down(lg) {
     .o_hc_form .o_hc_clinical { grid-template-columns: 1fr; }

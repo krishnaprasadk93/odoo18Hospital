@@ -124,6 +124,10 @@
                             <field name="medicine_type"/>
                             <field name="list_price" string="Sales Price" help=""/>
                         </group>
+                        <group string="Dosing">
+                            <field name="dose_step" placeholder="From the medicine type"/>
+                            <field name="dose_quick_values" placeholder="e.g. 0.3,0.6,0.9 (from the medicine type)"/>
+                        </group>
                         <group string="Stock alerts">
                             <field name="minimum_qty" string="Minimum Stock Quantity" help=""/>
                             <field name="enable_low_stock_alert" string="Enable Low Stock Alert" help=""/>

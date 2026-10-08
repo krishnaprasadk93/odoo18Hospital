@@ -1,4 +1,7 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import ValidationError
+
+from .dose_preset import parse_quick_doses
 
 
 class ProductTemplate(models.Model):
@@ -30,9 +33,22 @@ class ProductTemplate(models.Model):
         ('other', 'Other')
     ], string='Medicine Type')
 
+    # Optional per-medicine dosing (overrides the preset of the medicine type)
+    dose_step = fields.Float(string='+/- Step', digits=(16, 2),
+                             help='Leave empty to use the step of the medicine type preset.')
+    dose_quick_values = fields.Char(string='Quick Doses',
+                                    help='Comma-separated doses shown as chips, e.g. 0.3,0.6,0.9. '
+                                         'Leave empty to use the medicine type preset.')
     prescription_required = fields.Boolean(string='Prescription Required', default=True)
     expiry_alert_days = fields.Integer(string='Expiry Alert (Days)', default=90,
                                        help='Alert when medicine expires in X days')
+
+    @api.constrains('dose_step', 'dose_quick_values')
+    def _check_dose_settings(self):
+        for rec in self:
+            if rec.dose_step < 0:
+                raise ValidationError(_('The +/- step cannot be negative.'))
+            parse_quick_doses(rec.dose_quick_values)
 
     @api.model
     def create(self, vals):
