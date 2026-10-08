@@ -58,3 +58,48 @@ $hospital-tint: #eef6f5;
 // links). Chart series keep their own colour-blind-safe palette.
 .o_hd_dashboard { --hd-accent: #0f766e; }
 .o_hd_dashboard .o_hd_chip.o_hd_chip_active { background: rgba(15, 118, 110, 0.08); }
+
+// ---------------- Company logo (only when the company has one; see brand_logo.js)
+.o_hospital_navbar_logo { display: none; }
+.o_hospital_has_logo {
+    // Top bar: logo on a light pill so dark logos stay readable on teal
+    .o_main_navbar .o_hospital_navbar_logo {
+        display: block;
+        align-self: center;
+        height: 30px;
+        max-width: 120px;
+        object-fit: contain;
+        margin: 0 4px 0 2px;
+        padding: 3px 6px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    // Empty pages: the logo replaces Odoo's illustration, softly faded
+    .o_view_nocontent {
+        .o_view_nocontent_smiling_face::before,
+        .o_view_nocontent_neutral_face::before,
+        .o_view_nocontent_empty_folder::before {
+            width: 240px;
+            height: 120px;
+            background: var(--hospital-logo) no-repeat center / contain;
+            opacity: .35;
+            filter: grayscale(30%);
+        }
+    }
+
+    // Clinic home and the queue boards: large watermark in the middle
+    .o_hc_home, .o_kanban_renderer.o_hc_queue {
+        position: relative;
+        isolation: isolate;
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background: var(--hospital-logo) no-repeat center 55% / unquote("min(420px, 45vw)");
+            opacity: .06;
+        }
+    }
+}
