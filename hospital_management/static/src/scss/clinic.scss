@@ -475,11 +475,10 @@ $hc-soft: rgba($hc-accent, .07);
         .o_hc_dose_chip { min-width: 52px; height: 48px; font-size: 17px; }
         .o_field_x2many_list_row_add a, .o_list_record_remove { padding: 10px 6px; }
     }
-    // Portrait tablets: hide the rarely changed Period and the auto-calculated Qty
+    // Portrait tablets: hide only the rarely changed Period (Qty always stays visible)
     @media (max-width: 900px) {
         .o_prescription_list {
-            th[data-name="duration_type"], td[name="duration_type"],
-            th[data-name="quantity"], td[name="quantity"] { display: none !important; }
+            th[data-name="duration_type"], td[name="duration_type"] { display: none !important; }
             table { width: 100% !important; }
         }
     }
