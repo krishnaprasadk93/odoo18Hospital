@@ -1,9 +1,9 @@
 {
     'name': 'Hospital Theme',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'author': 'Krishnaprasad K',
     'category': 'Themes/Backend',
-    'summary': 'Clinical teal backend theme: navbar, buttons, forms, lists, '
+    'summary': 'Clinical teal backend theme: navbar, buttons, forms, lists, company logo '
                'branded login page, Clinic app icon and company name in the tab title',
     'depends': ['web', 'hospital_management'],
     'data': [
@@ -19,6 +19,8 @@
         'web.assets_backend': [
             'hospital_theme/static/src/scss/backend.scss',
             'hospital_theme/static/src/js/brand_title.js',
+            'hospital_theme/static/src/js/brand_logo.js',
+            'hospital_theme/static/src/xml/navbar.xml',
         ],
         'web.assets_frontend': [
             'hospital_theme/static/src/scss/login.scss',

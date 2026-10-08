@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Company logo in the top bar, between the apps menu and the app name
+         (shown by the stylesheet only when the company has a logo). -->
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='web.NavBar.AppsMenu']" position="after">
+            <img class="o_hospital_navbar_logo"
+                 t-attf-src="/web/binary/company_logo?company={{ env.services.company.currentCompany.id }}"
+                 alt="Logo"/>
+        </xpath>
+    </t>
+</templates>
