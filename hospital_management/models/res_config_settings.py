@@ -19,6 +19,12 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='hospital.revisit_check_type',
         default='hospital',
     )
+    hospital_cash_journal_id = fields.Many2one(
+        related='company_id.hospital_cash_journal_id', readonly=False)
+    hospital_card_journal_id = fields.Many2one(
+        related='company_id.hospital_card_journal_id', readonly=False)
+    hospital_upi_journal_id = fields.Many2one(
+        related='company_id.hospital_upi_journal_id', readonly=False)
     require_amount_collected_entry = fields.Boolean(
         string="Require Amount Collected for Cash Payments",
         config_parameter='hospital.require_amount_collected_entry',

@@ -18,9 +18,12 @@ class SplitPaymentWizard(models.TransientModel):
         readonly=True
     )
 
-    cash_journal_id = fields.Many2one('account.journal', domain="[('type','=','cash')]")
-    card_journal_id = fields.Many2one('account.journal', domain="[('type','=','bank')]")
-    upi_journal_id = fields.Many2one('account.journal', domain="[('type','=','bank')]")
+    cash_journal_id = fields.Many2one('account.journal', domain="[('type','=','cash')]",
+                                      default=lambda self: self.env.company.hospital_cash_journal_id)
+    card_journal_id = fields.Many2one('account.journal', domain="[('type','=','bank')]",
+                                      default=lambda self: self.env.company.hospital_card_journal_id)
+    upi_journal_id = fields.Many2one('account.journal', domain="[('type','=','bank')]",
+                                     default=lambda self: self.env.company.hospital_upi_journal_id)
 
     cash_amount = fields.Float()
     card_amount = fields.Float()
@@ -94,6 +97,13 @@ class SplitPaymentWizard(models.TransientModel):
         # are already confirmed, through the batches reserved on their delivery).
         self.sale_id._check_expired_batches()
 
+    def _check_payment_journals(self):
+        self.env.company._check_hospital_payment_journals([
+            ('Cash', self.cash_amount, self.cash_journal_id),
+            ('Card', self.card_amount, self.card_journal_id),
+            ('UPI', self.upi_amount, self.upi_journal_id),
+        ])
+
     def _check_amount_collected_required(self):
         require_amount_collected = self.env['ir.config_parameter'].sudo().get_param(
             'hospital.require_amount_collected_entry', 'False'
@@ -106,6 +116,7 @@ class SplitPaymentWizard(models.TransientModel):
         sale = self.sale_id
         self._check_batches_exist()
         self._check_expired_batches()
+        self._check_payment_journals()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale (triggers your override logic)
@@ -196,6 +207,7 @@ class SplitPaymentWizard(models.TransientModel):
         sale = self.sale_id
         self._check_batches_exist()
         self._check_expired_batches()
+        self._check_payment_journals()
         self._check_amount_collected_required()
 
         # 1️⃣ Confirm Sale

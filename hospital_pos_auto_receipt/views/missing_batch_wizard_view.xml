@@ -12,9 +12,9 @@
                 <field name="sale_id" invisible="1"/>
                 <field name="next_step" invisible="1"/>
                 <field name="line_ids">
-                    <list editable="bottom" create="false" delete="false">
+                    <list editable="bottom" create="false" delete="false" class="o_hc_batch_lines">
                         <field name="product_id" force_save="1"/>
-                        <field name="lot_name" required="1"/>
+                        <field name="lot_name" required="1" placeholder="Enter batch no"/>
                         <field name="expiration_date"/>
                     </list>
                 </field>

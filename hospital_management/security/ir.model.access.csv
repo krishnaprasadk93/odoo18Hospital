@@ -15,6 +15,7 @@ access_op_procedure_line_pharmacist,op.procedure.line.pharm,model_op_procedure_l
 access_consultation_payment_wizard_receptionist,consultation.payment.wizard.recep,model_consultation_payment_wizard,group_hospital_receptionist,1,1,1,1
 access_consultation_payment_wizard_doctor,consultation.payment.wizard.doc,model_consultation_payment_wizard,group_hospital_doctor,1,1,1,1
 access_medicine_purchase_wizard_pharmacist,medicine.purchase.wizard.pharm,model_medicine_purchase_wizard,group_hospital_pharmacist,1,1,1,1
+access_op_prescription_copy_wizard_doctor,op.prescription.copy.wizard.doc,model_op_prescription_copy_wizard,group_hospital_doctor,1,1,1,1
 access_medicine_purchase_wizard_user,medicine.purchase.wizard.user,model_medicine_purchase_wizard,base.group_user,1,1,1,1
 access_res_config_settings_hospital,res.config.settings.hospital,model_res_config_settings,base.group_system,1,1,1,1
 access_hospital_dose_preset_user,hospital.dose.preset.user,model_hospital_dose_preset,base.group_user,1,0,0,0

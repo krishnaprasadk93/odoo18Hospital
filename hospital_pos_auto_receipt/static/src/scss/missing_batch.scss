@@ -1,0 +1,13 @@
+// "No Batch Found" popup: show an empty Batch No in red. Odoo only flags
+// required cells of rows the user has edited, and these rows come pre-filled
+// from the server, so an untouched blank Batch No would otherwise look fine.
+.o_hc_batch_lines {
+    td.o_required_modifier:empty {
+        background-color: rgba($danger, .08);
+        box-shadow: inset 0 0 0 1px $danger;
+    }
+    td.o_required_modifier .o_input:placeholder-shown {
+        border-color: $danger;
+        background-color: rgba($danger, .08);
+    }
+}

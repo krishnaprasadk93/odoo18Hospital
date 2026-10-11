@@ -32,6 +32,17 @@ $hospital-tint: #eef6f5;
     .o_notebook .nav-tabs .nav-link.active { font-weight: 600; }
 }
 
+// Popups: Odoo lays the sheet out flat (no border, no inner padding) inside
+// dialogs, so the card look above would leave content touching its edge.
+.modal .o_form_view {
+    .o_form_sheet_bg { background: $hospital-surface; }
+    .o_form_sheet {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
 // ---------------- List view
 .o_list_renderer {
     background: $hospital-surface;

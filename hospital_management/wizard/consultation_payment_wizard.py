@@ -11,13 +11,15 @@ class ConsultationPaymentWizard(models.TransientModel):
 
     # Split Payment Fields
     journal_cash_id = fields.Many2one('account.journal', string='Cash Journal', domain=[('type', '=', 'cash')],
-                                      required=True)
+                                      default=lambda self: self.env.company.hospital_cash_journal_id)
     amount_cash = fields.Float(string='Cash Amount')
 
-    journal_card_id = fields.Many2one('account.journal', string='Card Journal', domain=[('type', '=', 'bank')])
+    journal_card_id = fields.Many2one('account.journal', string='Card Journal', domain=[('type', '=', 'bank')],
+                                      default=lambda self: self.env.company.hospital_card_journal_id)
     amount_card = fields.Float(string='Card Amount')
 
-    journal_upi_id = fields.Many2one('account.journal', string='UPI Journal', domain=[('type', '=', 'bank')])
+    journal_upi_id = fields.Many2one('account.journal', string='UPI Journal', domain=[('type', '=', 'bank')],
+                                     default=lambda self: self.env.company.hospital_upi_journal_id)
     amount_upi = fields.Float(string='UPI Amount')
 
     # Display helpers for the payment popup.
@@ -89,6 +91,11 @@ class ConsultationPaymentWizard(models.TransientModel):
             raise UserError(_(
                 "Please enter the Amount Given by Customer before processing a cash payment."
             ))
+        self.env.company._check_hospital_payment_journals([
+            (_('Cash'), self.amount_cash, self.journal_cash_id),
+            (_('Card'), self.amount_card, self.journal_card_id),
+            (_('UPI'), self.amount_upi, self.journal_upi_id),
+        ])
 
         # 1. Create and Post Invoice
         invoice_vals = {

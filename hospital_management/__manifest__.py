@@ -25,6 +25,7 @@
         'views/account_move.xml',
         'views/consultation_payment_view.xml',
         'views/medicine_purchase_wizard_views.xml',
+        'views/prescription_copy_wizard_views.xml',
         'views/stock_lot_view.xml',
         'views/res_config_settings_views.xml',
         'views/dose_preset_views.xml',
