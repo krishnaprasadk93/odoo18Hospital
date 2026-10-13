@@ -829,18 +829,22 @@ class HospitalOpTicket(models.Model):
             'target': 'new',
         }
 
-    def action_copy_last_prescription(self):
-        last_visit = self.env['hospital.op.ticket'].search([
+    def _get_previous_prescription_visits(self):
+        """ Earlier visits of the same patient that have a prescription,
+        most recent first. """
+        self.ensure_one()
+        return self.env['hospital.op.ticket'].search([
             ('patient_id', '=', self.patient_id.id),
             ('id', '!=', self.id),
             ('prescription_ids', '!=', False),
-        ], order='appointment_date desc', limit=1)
+        ], order='appointment_date desc')
 
-        if not last_visit:
-            raise UserError(_('No previous visit with prescription found for this patient.'))
-
-        new_lines = []
-        for line in last_visit.prescription_ids:
+    def _copy_prescription_from(self, visit, replace=False):
+        """ Add the prescription lines of `visit` to this ticket (or replace
+        the current ones). Returns the number of lines copied. """
+        self.ensure_one()
+        new_lines = [(5, 0, 0)] if replace else []
+        for line in visit.prescription_ids:
             new_lines.append((0, 0, {
                 'medicine_id': line.medicine_id.id,
                 'morning_dose': line.morning_dose,
@@ -852,15 +856,40 @@ class HospitalOpTicket(models.Model):
                 'notes': line.notes,
                 'quantity': line.quantity,
             }))
-
         self.write({'prescription_ids': new_lines})
+        return len(visit.prescription_ids)
+
+    def action_open_copy_prescription(self):
+        self.ensure_one()
+        visits = self._get_previous_prescription_visits()
+        if not visits:
+            raise UserError(_('No previous visit with prescription found for this patient.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Copy Prescription from Previous Visit'),
+            'res_model': 'op.prescription.copy.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_ticket_id': self.id,
+                'default_visit_id': visits[0].id,
+            },
+        }
+
+    def action_copy_last_prescription(self):
+        last_visit = self._get_previous_prescription_visits()[:1]
+
+        if not last_visit:
+            raise UserError(_('No previous visit with prescription found for this patient.'))
+
+        copied = self._copy_prescription_from(last_visit)
 
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Success'),
-                'message': _(f'Copied {len(new_lines)} prescription(s) from visit {last_visit.visit_no}'),
+                'message': _(f'Copied {copied} prescription(s) from visit {last_visit.visit_no}'),
                 'type': 'success',
                 'sticky': False,
                 'next': {

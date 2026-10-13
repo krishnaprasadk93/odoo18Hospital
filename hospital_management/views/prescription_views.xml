@@ -16,4 +16,45 @@
             </list>
         </field>
     </record>
+
+    <record id="view_prescription_line_form" model="ir.ui.view">
+        <field name="name">prescription.line.form</field>
+        <field name="model">prescription.line</field>
+        <field name="arch" type="xml">
+            <form string="Prescription">
+                <sheet>
+                    <group>
+                        <group string="Medicine">
+                            <field name="medicine_id"/>
+                            <field name="dose_summary" string="Dose"/>
+                            <field name="morning_dose" string="Morning"/>
+                            <field name="afternoon_dose" string="Afternoon"/>
+                            <field name="evening_dose" string="Evening"/>
+                            <field name="dose_unit" string="Unit"/>
+                        </group>
+                        <group string="Course">
+                            <field name="duration_number" string="Duration"/>
+                            <field name="duration_type" string="Period"/>
+                            <field name="instruction" string="When to Take"/>
+                            <field name="quantity" string="Total Quantity"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Visit">
+                            <field name="op_ticket_id" string="Visit"/>
+                            <field name="patient_id"/>
+                        </group>
+                        <group string="Stock">
+                            <field name="stock_location_id"/>
+                            <field name="available_qty"/>
+                            <field name="stock_status"/>
+                        </group>
+                    </group>
+                    <group string="Special Instructions">
+                        <field name="notes" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
 </odoo>

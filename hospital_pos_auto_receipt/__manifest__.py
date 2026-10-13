@@ -12,5 +12,10 @@
         'views/split_payment_wizard.xml',
         'views/missing_batch_wizard_view.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'hospital_pos_auto_receipt/static/src/scss/missing_batch.scss',
+        ],
+    },
     'installable': True,
 }

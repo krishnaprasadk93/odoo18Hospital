@@ -147,6 +147,12 @@
                                    widget="radio"
                                    options="{'horizontal': true}"
                                    readonly="consultation_invoice_id or draft_state in ['invoiced', 'paid']"/>
+                            <div colspan="2" invisible="not has_previous_prescription or state != 'consulting'"
+                                 groups="hospital_management.group_hospital_doctor">
+                                <button name="action_open_copy_prescription" type="object"
+                                        string="Copy Prescription from Previous Visit"
+                                        icon="fa-files-o" class="btn btn-secondary btn-sm"/>
+                            </div>
                         </group>
                         <group string="Billing"
                                groups="hospital_management.group_hospital_receptionist,hospital_management.group_hospital_pharmacist">

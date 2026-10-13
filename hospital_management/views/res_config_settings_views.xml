@@ -24,6 +24,23 @@
                     </block>
 
                     <block title="Payments" name="hospital_payments_block">
+                        <setting id="hospital_payment_journals" string="Payment journals"
+                                 help="Journals used by the payment popups. A payment is created for each method whose amount is more than 0.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="hospital_cash_journal_id" string="Cash" class="col-lg-3 o_light_label"/>
+                                    <field name="hospital_cash_journal_id" options="{'no_create': True}"/>
+                                </div>
+                                <div class="row">
+                                    <label for="hospital_card_journal_id" string="Card" class="col-lg-3 o_light_label"/>
+                                    <field name="hospital_card_journal_id" options="{'no_create': True}"/>
+                                </div>
+                                <div class="row">
+                                    <label for="hospital_upi_journal_id" string="UPI" class="col-lg-3 o_light_label"/>
+                                    <field name="hospital_upi_journal_id" options="{'no_create': True}"/>
+                                </div>
+                            </div>
+                        </setting>
                         <setting id="hospital_require_amount_collected"
                                  help="When a payment includes cash, the cashier must enter the amount the patient handed over before the invoice can be processed.">
                             <field name="require_amount_collected_entry"/>
