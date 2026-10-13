@@ -179,6 +179,27 @@ class AccountMove(models.Model):
 
         return "".join(parts)
 
+    def action_get_escpos_receipt(self):
+        """Public, RPC-safe wrapper that picks the right ESC/POS builder for
+        this invoice (consultation vs pharmacy/OTC) and returns the raw
+        string — used by the mobile/web apps for direct Bluetooth/USB
+        printing (no QZ Tray) and for reprints. The underlying builders are
+        private (leading underscore) and can't be called directly over RPC,
+        so this is the one supported entry point for fetching receipt text
+        outside of the QZ Tray print actions above.
+        """
+        self.ensure_one()
+        is_consultation = False
+        if hasattr(self, 'op_ticket_id') and self.op_ticket_id:
+            is_consultation = self.op_ticket_id.consultation_invoice_id.id == self.id
+
+        if is_consultation and hasattr(self, '_build_escpos_consultaion_invoice_at301'):
+            escpos_str = self._build_escpos_consultaion_invoice_at301()
+        else:
+            escpos_str = self._build_escpos_invoice_at301()
+
+        return {'escpos_raw': escpos_str}
+
     def action_qz_direct_print(self):
         self.ensure_one()
         escpos_str = self._build_escpos_invoice_at301()
