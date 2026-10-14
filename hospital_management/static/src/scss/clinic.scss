@@ -235,6 +235,27 @@ $hc-soft: rgba($hc-accent, .07);
         font-variant-numeric: tabular-nums;
     }
     .o_hc_pay_journal { font-size: 12px; color: $hc-muted; }
+    .o_hc_pay_warn {
+        font-size: 12px;
+        font-weight: 600;
+        color: darken($danger, 5%);
+        .fa { margin-right: 4px; }
+    }
+    .o_hc_pay_tile:has(.o_hc_pay_warn) { border-color: rgba($danger, .5); }
+    .o_hc_cash_quick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        .btn {
+            min-width: 56px;
+            border: 1px solid $hc-border;
+            background: #fff;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            &:hover { border-color: $hc-accent; color: darken($hc-accent, 8%); }
+        }
+    }
     .o_hc_pay_status {
         margin-top: 12px;
         padding: 8px 12px;

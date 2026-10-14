@@ -1,5 +1,5 @@
 from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError
 
 
 class ResCompany(models.Model):
@@ -21,7 +21,8 @@ class ResCompany(models.Model):
         silently skipped and the invoice left part-unpaid. """
         missing = [label for label, amount, journal in splits if amount > 0 and not journal]
         if missing:
-            raise UserError(_(
-                "Select a journal for: %(methods)s.\n"
-                "Default journals can be set in Settings > Clinic > Payments.",
+            raise ClinicError(_("Payment journal missing"), _(
+                "No journal is selected for: %(methods)s.\n\n"
+                "Pick one on the payment tile, or set default journals in "
+                "Settings > Clinic > Payments.",
                 methods=", ".join(missing)))

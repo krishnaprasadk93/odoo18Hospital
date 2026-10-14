@@ -87,6 +87,7 @@
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_hospital_op_ticket_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_hospital_op_ticket_form')})]"/>
         <field name="domain">[('state', '=', 'pharmacy')]</field>
+        <field name="context">{'hc_pharmacy_queue': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Pharmacy queue is clear</p>
             <p>Prescriptions appear here as soon as a doctor completes a consultation.</p>

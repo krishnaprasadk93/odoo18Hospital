@@ -1,5 +1,5 @@
 from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError
 
 
 class OpPrescriptionCopyWizard(models.TransientModel):
@@ -23,7 +23,8 @@ class OpPrescriptionCopyWizard(models.TransientModel):
     def action_copy(self):
         self.ensure_one()
         if self.ticket_id.state != 'consulting':
-            raise UserError(_('Prescriptions can only be copied during consultation.'))
+            raise ClinicError(_('Not in consultation'), _(
+                'Prescriptions can only be copied while the visit is in consultation.'))
         copied = self.ticket_id._copy_prescription_from(self.visit_id, replace=self.replace_existing)
         return {
             'type': 'ir.actions.client',

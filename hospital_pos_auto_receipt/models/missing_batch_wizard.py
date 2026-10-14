@@ -1,5 +1,5 @@
-from odoo import fields, models
-from odoo.exceptions import UserError
+from odoo import _, fields, models
+from odoo.addons.hospital_management.exceptions import ClinicError
 
 
 class SaleMissingBatchWizard(models.TransientModel):
@@ -18,8 +18,8 @@ class SaleMissingBatchWizard(models.TransientModel):
         self.ensure_one()
         missing_name = self.line_ids.filtered(lambda l: not (l.lot_name or '').strip())
         if missing_name:
-            raise UserError(
-                "Enter a Batch No for: %s" % ", ".join(missing_name.product_id.mapped('display_name')))
+            raise ClinicError(_("Batch number needed"), _(
+                "Enter a Batch No for: %s", ", ".join(missing_name.product_id.mapped('display_name'))))
 
         Lot = self.env['stock.lot']
         for line in self.line_ids:

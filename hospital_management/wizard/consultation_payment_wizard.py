@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError
 
 
 class ConsultationPaymentWizard(models.TransientModel):
@@ -76,9 +76,10 @@ class ConsultationPaymentWizard(models.TransientModel):
             total_paid = rec.amount_cash + rec.amount_card + rec.amount_upi
             # Allow small float differences
             if abs(total_paid - rec.amount_total) > 0.01:
-                raise UserError(_(
-                    "Total payment (%.2f) must match Consultation Fee (%.2f)."
-                ) % (total_paid, rec.amount_total))
+                raise ClinicError(_("Payment doesn't add up"), _(
+                    "Cash, Card and UPI add up to %(paid).2f but the consultation fee is %(fee).2f.\n\n"
+                    "Adjust the amounts so they match the fee.",
+                    paid=total_paid, fee=rec.amount_total))
 
     def action_process_payment(self):
         self.ensure_one()
@@ -88,9 +89,8 @@ class ConsultationPaymentWizard(models.TransientModel):
             'hospital.require_amount_collected_entry', 'False'
         )
         if str(require_amount_collected).lower() == 'true' and self.amount_cash > 0 and not self.amount_given:
-            raise UserError(_(
-                "Please enter the Amount Given by Customer before processing a cash payment."
-            ))
+            raise ClinicError(_("Cash given needed"), _(
+                "Enter how much cash the patient handed over in “Cash given by customer”."))
         self.env.company._check_hospital_payment_journals([
             (_('Cash'), self.amount_cash, self.journal_cash_id),
             (_('Card'), self.amount_card, self.journal_card_id),

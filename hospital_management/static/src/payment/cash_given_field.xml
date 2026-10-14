@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="hospital_management.CashGivenField">
+        <div class="o_hc_cash_given" t-on-keydown="onKeydown">
+            <FloatField t-props="floatProps"/>
+            <div class="o_hc_cash_quick" t-if="!props.readonly and quickAmounts.length">
+                <t t-foreach="quickAmounts" t-as="amount" t-key="amount.value">
+                    <button type="button" class="btn btn-sm btn-light" t-esc="amount.label"
+                            t-on-click="() => this.setAmount(amount.value)"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

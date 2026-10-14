@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Pharmacy checkout: the sales order as the pharmacy counter sees it.
+         Opened from the Clinic menus; the Sales app keeps Odoo's full form. -->
+    <record id="sale_order_form_pharmacy_checkout" model="ir.ui.view">
+        <field name="name">sale.order.form.pharmacy.checkout</field>
+        <field name="model">sale.order</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <form string="Pharmacy Checkout" class="o_hc_form o_hc_checkout">
+                <header>
+                    <button name="action_open_split_payment" type="object" string="Confirm and Pay"
+                            class="btn-primary" data-hotkey="q"
+                            invisible="state == 'cancel' or invoice_status == 'invoiced'"/>
+                    <button name="action_reprint_qz_receipt" type="object" string="Reprint Receipt"
+                            icon="fa-print" invisible="not invoice_ids"/>
+                    <button name="action_open_custom_return_wizard" type="object" string="Return Medicine"
+                            invisible="state != 'sale'"/>
+                    <button name="action_draft" type="object" string="Set Back to Draft"
+                            class="btn-link o_hc_btn_quiet" invisible="state != 'cancel'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            class="btn-link o_hc_btn_quiet"
+                            invisible="state not in ('draft', 'sent') or invoice_ids"/>
+                </header>
+                <sheet>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="pricelist_id" invisible="1"/>
+                    <field name="invoice_status" invisible="1"/>
+                    <field name="invoice_ids" invisible="1"/>
+                    <field name="op_ticket_id" invisible="1"/>
+
+                    <!-- Patient card -->
+                    <div class="o_hc_head">
+                        <div class="o_hc_token" invisible="not op_token_number">
+                            <span class="o_hc_token_label">Token</span>
+                            <field name="op_token_number" readonly="1"/>
+                        </div>
+                        <div class="o_hc_head_main">
+                            <div class="o_hc_eyebrow">
+                                <field name="name" readonly="1" class="oe_inline"/>
+                                <span class="mx-1">·</span>
+                                <field name="date_order" readonly="1" class="oe_inline" widget="date"/>
+                            </div>
+                            <h1 class="o_hc_title">
+                                <field name="partner_id" placeholder="Select a patient…"
+                                       readonly="state not in ('draft', 'sent')"/>
+                            </h1>
+                            <div class="o_hc_chips" invisible="not op_ticket_id">
+                                <span class="o_hc_chip">
+                                    <i class="fa fa-stethoscope" title="Visit"/>
+                                    <field name="visit_no" class="oe_inline"/>
+                                </span>
+                                <span class="o_hc_chip" invisible="not doctor_id">
+                                    <i class="fa fa-user-md" title="Doctor"/>
+                                    <field name="doctor_id" readonly="1" class="oe_inline" options="{'no_open': True}"/>
+                                </span>
+                                <span class="o_hc_chip" invisible="not op_patient_summary">
+                                    <i class="fa fa-user-o" title="Patient"/>
+                                    <field name="op_patient_summary" class="oe_inline"/>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="o_hc_head_status">
+                            <field name="state" widget="badge" readonly="1"
+                                   decoration-info="state in ('draft', 'sent')"
+                                   decoration-success="state == 'sale'"
+                                   decoration-danger="state == 'cancel'"/>
+                        </div>
+                    </div>
+
+                    <!-- Medicines -->
+                    <div class="o_hc_section">Medicines</div>
+                    <field name="order_line" nolabel="1" class="o_hc_checkout_lines"
+                           readonly="state not in ('draft', 'sent')">
+                        <list editable="bottom" decoration-muted="product_uom_qty == 0">
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="product_uom" column_invisible="1"/>
+                            <field name="lot_available_qty" column_invisible="1"/>
+                            <field name="product_id" string="Medicine"
+                                   domain="[('sale_ok', '=', True)]"
+                                   options="{'no_create': True}"/>
+                            <field name="lot_id"
+                                   domain="[('product_id', '=', product_id), '|', ('expiration_date', '=', False), ('expiration_date', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+                                   context="{'default_product_id': product_id, 'default_company_id': parent.company_id, 'hc_batch_label': True}"
+                                   decoration-warning="lot_id and lot_available_qty &lt; product_uom_qty"
+                                   placeholder="Auto (earliest expiry)"
+                                   options="{'no_open': True}"/>
+                            <field name="expiry_date_only" string="Expiry" readonly="1" optional="show"/>
+                            <field name="product_uom_qty" string="Qty"/>
+                            <field name="price_unit" string="Price"/>
+                            <field name="tax_id" widget="many2many_tags" optional="hide"
+                                   options="{'no_create': True}"/>
+                            <field name="price_subtotal" string="Amount"/>
+                        </list>
+                    </field>
+
+                    <!-- Totals -->
+                    <div class="o_hc_checkout_totals">
+                        <div class="o_hc_checkout_sub">
+                            <span>Subtotal</span><field name="amount_untaxed"/>
+                        </div>
+                        <div class="o_hc_checkout_sub" invisible="not amount_tax">
+                            <span>Taxes</span><field name="amount_tax"/>
+                        </div>
+                        <div class="o_hc_checkout_total">
+                            <span>Total</span><field name="amount_total"/>
+                        </div>
+                        <div class="o_hc_checkout_sub" invisible="not amount_collected">
+                            <span>Cash given</span><field name="amount_collected" readonly="1"/>
+                        </div>
+                        <div class="o_hc_checkout_sub" invisible="not amount_collected">
+                            <span>Change returned</span><field name="balance_amount" readonly="1"/>
+                        </div>
+                    </div>
+
+                    <!-- Doctor's prescription (orders created from a visit) -->
+                    <div invisible="not op_ticket_id">
+                        <div class="o_hc_section">Doctor's prescription</div>
+                        <field name="prescription_ids" nolabel="1" readonly="1">
+                            <list>
+                                <field name="medicine_id" string="Medicine"/>
+                                <field name="dosage_pattern" string="Dosage (M-A-E)"/>
+                                <field name="duration_number" string="For"/>
+                                <field name="duration_type" string="Period"/>
+                                <field name="instruction" string="When"/>
+                                <field name="quantity" string="Total Qty"/>
+                                <field name="notes" string="Instructions" optional="hide"/>
+                            </list>
+                        </field>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Pharmacy Sales: quotations and orders, opening in the checkout form -->
+    <record id="action_pharmacy_checkout" model="ir.actions.act_window">
+        <field name="name">Pharmacy Sales</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="sale.sale_order_view_search_inherit_quotation"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Start a pharmacy sale</p>
+            <p>Add the patient and medicines, then Confirm and Pay.</p>
+        </field>
+    </record>
+    <record id="action_pharmacy_checkout_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale.view_quotation_tree"/>
+        <field name="act_window_id" ref="action_pharmacy_checkout"/>
+    </record>
+    <record id="action_pharmacy_checkout_form" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="sale_order_form_pharmacy_checkout"/>
+        <field name="act_window_id" ref="action_pharmacy_checkout"/>
+    </record>
+
+    <!-- Pharmacy → OTC Sales now opens the checkout. The old menu (hospital_management,
+         opening the Sales app form) is hidden. Upgrading hospital_management re-activates
+         menus it defines but never removes groups, so the technical-only group keeps it
+         hidden for normal users either way. -->
+    <record id="hospital_management.menu_hospital_sales_order" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+    </record>
+    <menuitem id="menu_pharmacy_checkout"
+              name="OTC Sales"
+              parent="hospital_management.menu_pharmacy_root"
+              action="action_pharmacy_checkout"
+              sequence="30"/>
+
+</odoo>

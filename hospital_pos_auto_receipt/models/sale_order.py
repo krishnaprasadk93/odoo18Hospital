@@ -1,6 +1,7 @@
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError
 from odoo.tools import format_date
 
 
@@ -68,6 +69,16 @@ class SaleOrder(models.Model):
             }
         else:
             raise UserError("Print function (_build_escpos_invoice_at301) not found on Invoice model.")
+
+    @api.model
+    def _hc_checkout_action(self, action):
+        """ Show sales orders opened from the Clinic in the pharmacy checkout
+        form (the Sales app keeps Odoo's full form). """
+        form = self.env.ref('hospital_pos_auto_receipt.sale_order_form_pharmacy_checkout')
+        modes = (action.get('view_mode') or 'form').split(',')
+        action['views'] = [(form.id if mode == 'form' else False, mode) for mode in modes]
+        action.pop('view_id', None)
+        return action
 
     def _get_products_missing_batch(self):
         """ Lot-tracked stockable products on this order that have no batch
@@ -164,7 +175,7 @@ class SaleOrder(models.Model):
         for order in self:
             issues = order._get_expired_batch_issues()
             if issues:
-                raise UserError(_(
+                raise ClinicError(_("Expired batch"), _(
                     "Cannot confirm %(order)s: expired batch.\n\n%(issues)s\n\n"
                     "Choose a batch that has not expired on the order line, or remove the line.",
                     order=order.name, issues="\n".join("• " + issue for issue in issues)))
