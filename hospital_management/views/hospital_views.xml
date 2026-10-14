@@ -361,6 +361,11 @@
                 <field name="draft_state" optional="hide"/>
                 <field name="consulting_state" optional="hide"/>
                 <field name="pharmacy_state" optional="hide"/>
+                <field name="pharmacy_stock_status" column_invisible="1"/>
+                <field name="pharmacy_stock_text" string="Stock" widget="badge"
+                       column_invisible="not context.get('hc_pharmacy_queue')"
+                       decoration-success="pharmacy_stock_status == 'ready'"
+                       decoration-danger="pharmacy_stock_status == 'low'"/>
             </list>
         </field>
     </record>
@@ -469,9 +474,10 @@
                                     <field name="doctor_name"/>
                                 </div>
                             </div>
-                            <field name="pharmacy_stock_status" widget="badge"
-                                   decoration-success="pharmacy_stock_status == 'ready'"
-                                   decoration-danger="pharmacy_stock_status == 'low'"/>
+                            <span t-attf-class="badge rounded-pill o_hc_stock_badge {{ record.pharmacy_stock_status.raw_value == 'ready' ? 'text-bg-success' : record.pharmacy_stock_status.raw_value == 'low' ? 'text-bg-danger' : 'text-bg-light' }}"
+                                  title="Stock for the prescribed medicines">
+                                <field name="pharmacy_stock_text"/>
+                            </span>
                         </div>
                         <footer class="pt-2 small">
                             <span class="o_hc_med_count">

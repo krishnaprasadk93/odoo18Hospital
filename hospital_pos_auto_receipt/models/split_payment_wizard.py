@@ -1,5 +1,6 @@
-from odoo import models, fields, api
-from odoo.exceptions import RedirectWarning, UserError
+from odoo import _, models, fields, api
+from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError, ClinicRedirectWarning
 
 
 class SplitPaymentWizard(models.TransientModel):
@@ -87,10 +88,12 @@ class SplitPaymentWizard(models.TransientModel):
     def _check_batches_exist(self):
         missing = self.sale_id._get_products_missing_batch()
         if missing:
-            raise RedirectWarning(
-                "No batch exists for: %s" % ", ".join(missing.mapped('display_name')),
+            raise ClinicRedirectWarning(
+                _("Batch needed"),
+                _("No batch exists yet for: %s.\n\nCreate the batch to continue to payment.",
+                  ", ".join(missing.mapped('display_name'))),
                 self.sale_id._action_missing_batch_wizard(missing, 'pay'),
-                "Create Batch")
+                _("Create Batch"))
 
     def _check_expired_batches(self):
         # Last batch check before confirming / paying (also covers orders that
@@ -109,7 +112,8 @@ class SplitPaymentWizard(models.TransientModel):
             'hospital.require_amount_collected_entry', 'False'
         )
         if str(require_amount_collected).lower() == 'true' and self.cash_amount > 0 and not self.amount_given:
-            raise UserError("Please enter the Amount Given by Customer before processing a cash payment.")
+            raise ClinicError(_("Cash given needed"), _(
+                "Enter how much cash the customer handed over in “Cash given by customer”."))
 
     def action_create_invoice_payment1(self):
         self.ensure_one()
@@ -138,10 +142,12 @@ class SplitPaymentWizard(models.TransientModel):
         # 4️⃣ Validate payment amount
         total_paid = self.cash_amount + self.card_amount + self.upi_amount
         if total_paid <= 0:
-            raise UserError("Enter payment amount.")
+            raise ClinicError(_("No payment entered"), _("Enter the amount received in Cash, Card or UPI."))
 
         if total_paid > invoice.amount_residual:
-            raise UserError("Payment exceeds balance.")
+            raise ClinicError(_("Payment is more than the bill"), _(
+                "Cash, Card and UPI add up to %(paid).2f but only %(due).2f is due.\n\nReduce one of the amounts.",
+                paid=total_paid, due=invoice.amount_residual))
 
         # 5️⃣ Register payments
         if self.cash_amount > 0:
@@ -239,9 +245,11 @@ class SplitPaymentWizard(models.TransientModel):
         # 5️⃣ Validate payment amount
         total_paid = self.cash_amount + self.card_amount + self.upi_amount
         if total_paid <= 0:
-            raise UserError("Enter payment amount.")
+            raise ClinicError(_("No payment entered"), _("Enter the amount received in Cash, Card or UPI."))
         if total_paid > invoice.amount_residual:
-            raise UserError("Payment exceeds balance.")
+            raise ClinicError(_("Payment is more than the bill"), _(
+                "Cash, Card and UPI add up to %(paid).2f but only %(due).2f is due.\n\nReduce one of the amounts.",
+                paid=total_paid, due=invoice.amount_residual))
 
         # 6️⃣ Register payments
         if self.cash_amount > 0:

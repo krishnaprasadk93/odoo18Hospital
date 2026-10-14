@@ -4,6 +4,7 @@ import pytz
 
 from odoo import models, fields, api, _, exceptions
 from odoo.exceptions import UserError
+from odoo.addons.hospital_management.exceptions import ClinicError
 
 
 class HospitalOpTicket(models.Model):
@@ -139,9 +140,11 @@ class HospitalOpTicket(models.Model):
     prescription_count = fields.Integer(string='Medicines', compute='_compute_pharmacy_status')
     pharmacy_stock_status = fields.Selection([
         ('ready', 'Ready'),
-        ('low', 'Low stock'),
+        ('low', 'Short'),
         ('none', 'No medicines'),
     ], string='Stock', compute='_compute_pharmacy_status')
+    pharmacy_short_count = fields.Integer(string='Medicines Short', compute='_compute_pharmacy_status')
+    pharmacy_stock_text = fields.Char(string='Stock Summary', compute='_compute_pharmacy_status')
 
     # hospital.op.ticket model
     has_previous_prescription = fields.Boolean(
@@ -661,13 +664,18 @@ class HospitalOpTicket(models.Model):
     def _compute_pharmacy_status(self):
         for rec in self:
             lines = rec.prescription_ids
+            short = len(lines.filtered('is_out_of_stock'))
             rec.prescription_count = len(lines)
+            rec.pharmacy_short_count = short
             if not lines:
                 rec.pharmacy_stock_status = 'none'
-            elif any(lines.mapped('is_out_of_stock')):
+                rec.pharmacy_stock_text = _('No medicines')
+            elif short:
                 rec.pharmacy_stock_status = 'low'
+                rec.pharmacy_stock_text = _('%(short)s of %(total)s short', short=short, total=len(lines))
             else:
                 rec.pharmacy_stock_status = 'ready'
+                rec.pharmacy_stock_text = _('All in stock')
 
     @api.model
     def get_clinic_home_data(self):
@@ -863,7 +871,8 @@ class HospitalOpTicket(models.Model):
         self.ensure_one()
         visits = self._get_previous_prescription_visits()
         if not visits:
-            raise UserError(_('No previous visit with prescription found for this patient.'))
+            raise ClinicError(_('No earlier prescription'), _(
+                'This patient has no earlier visit with a prescription to copy from.'))
         return {
             'type': 'ir.actions.act_window',
             'name': _('Copy Prescription from Previous Visit'),
@@ -880,7 +889,8 @@ class HospitalOpTicket(models.Model):
         last_visit = self._get_previous_prescription_visits()[:1]
 
         if not last_visit:
-            raise UserError(_('No previous visit with prescription found for this patient.'))
+            raise ClinicError(_('No earlier prescription'), _(
+                'This patient has no earlier visit with a prescription to copy from.'))
 
         copied = self._copy_prescription_from(last_visit)
 

@@ -60,7 +60,13 @@
     <field name="arch" type="xml">
 
         <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="after">
-            <field name="lot_id"/>
+            <field name="lot_available_qty" column_invisible="1"/>
+            <field name="lot_id"
+                   domain="[('product_id', '=', product_id), '|', ('expiration_date', '=', False), ('expiration_date', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+                   context="{'default_product_id': product_id, 'default_company_id': parent.company_id, 'hc_batch_label': True}"
+                   decoration-warning="lot_id and lot_available_qty &lt; product_uom_qty"
+                   placeholder="Auto (earliest expiry)"
+                   options="{'no_open': True}"/>
             <field name="expiry_date_only" readonly="1"/>
         </xpath>
 

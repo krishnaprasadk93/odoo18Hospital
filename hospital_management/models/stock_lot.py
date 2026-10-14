@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import _, models, fields, api
 from odoo.exceptions import ValidationError
 
 
@@ -10,6 +10,22 @@ class StockLot(models.Model):
     # ====================================
 
     selling_price = fields.Float(string="Selling Price")
+
+    # ====================================
+    # Batch label in sale order lines: "MLT1224 · exp 08/2027 · 42 in stock"
+    # ====================================
+
+    @api.depends_context('hc_batch_label')
+    def _compute_display_name(self):
+        super()._compute_display_name()
+        if not self.env.context.get('hc_batch_label'):
+            return
+        for lot in self:
+            parts = [lot.name or '']
+            if 'expiration_date' in lot._fields and lot.expiration_date:
+                parts.append(_('exp %s', lot.expiration_date.strftime('%m/%Y')))
+            parts.append(_('%s in stock', '{:g}'.format(lot.product_qty)))
+            lot.display_name = ' · '.join(parts)
 
     margin_percent = fields.Float(
         string="Margin %",

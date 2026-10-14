@@ -27,18 +27,21 @@
                         <field name="amount_cash" class="o_hc_pay_amount"/>
                         <field name="journal_cash_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
                                placeholder="Cash journal"/>
+                        <div class="o_hc_pay_warn" invisible="not amount_cash or journal_cash_id"><i class="fa fa-exclamation-circle" title="No journal"/> Select a journal</div>
                     </div>
                     <div class="o_hc_pay_tile">
                         <div class="o_hc_pay_tile_head"><i class="fa fa-credit-card" title="Card"/> Card</div>
                         <field name="amount_card" class="o_hc_pay_amount"/>
                         <field name="journal_card_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
                                placeholder="Card journal"/>
+                        <div class="o_hc_pay_warn" invisible="not amount_card or journal_card_id"><i class="fa fa-exclamation-circle" title="No journal"/> Select a journal</div>
                     </div>
                     <div class="o_hc_pay_tile">
                         <div class="o_hc_pay_tile_head"><i class="fa fa-mobile" title="UPI"/> UPI</div>
                         <field name="amount_upi" class="o_hc_pay_amount"/>
                         <field name="journal_upi_id" class="o_hc_pay_journal" options="{'no_create': True, 'no_open': True}"
                                placeholder="UPI journal"/>
+                        <div class="o_hc_pay_warn" invisible="not amount_upi or journal_upi_id"><i class="fa fa-exclamation-circle" title="No journal"/> Select a journal</div>
                     </div>
                 </div>
 
@@ -58,7 +61,8 @@
                 <div class="o_hc_pay_cash" invisible="not amount_cash">
                     <div>
                         <label for="amount_given" string="Cash given by patient"/>
-                        <field name="amount_given" class="o_hc_pay_amount"/>
+                        <field name="amount_given" class="o_hc_pay_amount" widget="hc_cash_given"
+                               options="{'cash_field': 'amount_cash'}"/>
                     </div>
                     <div class="o_hc_pay_change">
                         <div class="o_hc_pay_total_label">Change to return</div>

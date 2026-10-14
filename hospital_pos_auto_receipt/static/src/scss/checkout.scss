@@ -1,0 +1,47 @@
+// Pharmacy checkout form (sale.order, opened from the Clinic menus).
+$hc-co-accent: $o-brand-primary;
+$hc-co-border: #e3e8e7;
+$hc-co-muted: #6b7774;
+
+.o_hc_checkout {
+    .o_hc_checkout_lines {
+        margin-bottom: 8px;
+        .o_list_table td[name="product_id"] { font-weight: 600; }
+        .o_list_table td[name="price_subtotal"] { font-weight: 600; font-variant-numeric: tabular-nums; }
+        // A batch with less stock than the quantity (decoration-warning) gets a soft amber cell.
+        td.text-warning { background: rgba(#d97706, .1); }
+    }
+
+    .o_hc_checkout_totals {
+        margin: 8px 0 20px auto;
+        width: 100%;
+        max-width: 340px;
+        padding: 12px 16px;
+        border: 1px solid $hc-co-border;
+        border-radius: 12px;
+        background: #fff;
+        > div {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 16px;
+            .o_field_widget { width: auto; text-align: right; font-variant-numeric: tabular-nums; }
+        }
+    }
+    .o_hc_checkout_sub {
+        font-size: 13px;
+        color: $hc-co-muted;
+        padding: 2px 0;
+    }
+    .o_hc_checkout_total {
+        margin: 6px 0 4px;
+        padding-top: 8px;
+        border-top: 1px solid $hc-co-border;
+        font-weight: 600;
+        .o_field_widget, .o_field_widget span {
+            font-size: 26px;
+            font-weight: 700;
+            color: darken($hc-co-accent, 8%);
+        }
+    }
+}

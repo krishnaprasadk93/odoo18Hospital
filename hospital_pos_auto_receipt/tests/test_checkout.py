@@ -3,7 +3,7 @@ from datetime import timedelta
 from odoo import fields
 from odoo.exceptions import RedirectWarning, UserError
 from odoo.tests import tagged
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import Form, TransactionCase
 
 
 @tagged('post_install', '-at_install')
@@ -104,6 +104,27 @@ class TestCheckout(TransactionCase):
 
     # Expired batches are covered by test_expired_batch.py.
 
+    # ------------------------------------------------------------ message titles
+    def test_titles(self):
+        order = self._order()
+        with self.assertRaises(RedirectWarning) as caught:
+            self._split_wizard(order).action_create_invoice_payment()
+        self.assertEqual(caught.exception.context['title'], 'Batch needed')
+        self.assertEqual(caught.exception.args[2], 'Create Batch')
+
+        expired = self._order(lot=self._lot('TB-OLD', days=-5))
+        with self.assertRaises(UserError) as caught:
+            expired.action_open_split_payment()
+        self.assertEqual(caught.exception.context['title'], 'Expired batch')
+
+        paid = self._order(qty=1, lot=self._lot())
+        wizard = self._split_wizard(paid)
+        wizard.cash_amount = 500.0
+        with self.assertRaises(UserError) as caught:
+            wizard.action_create_invoice_payment()
+        self.assertEqual(caught.exception.context['title'], 'Payment is more than the bill')
+
+
     # ------------------------------------------------------------ full checkout
     def test_cash_checkout_goes_negative_and_pays(self):
         """ Create the batch from the popup, then pay in cash: delivery done
@@ -178,3 +199,87 @@ class TestCheckout(TransactionCase):
         with self.assertRaises(UserError):
             wizard.action_create_invoice_payment()
         self.assertEqual(order.state, 'draft')
+
+
+@tagged('post_install', '-at_install')
+class TestBatchPicker(TransactionCase):
+    """ Batch pre-fill on pharmacy sale lines (FEFO) and the checkout form. """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.company.has_received_warning_stock_sms = True
+        now = fields.Datetime.now()
+        cls.partner = cls.env['res.partner'].create({'name': 'Batch Picker Patient'})
+        cls.product = cls.env['product.product'].create({
+            'name': 'Picker Tablet', 'type': 'consu', 'is_storable': True, 'tracking': 'lot', 'list_price': 10,
+        })
+        Lot = cls.env['stock.lot']
+        cls.lot_soon = Lot.create({'name': 'PK-SOON', 'product_id': cls.product.id,
+                                   'expiration_date': now + timedelta(days=30)})
+        cls.lot_later = Lot.create({'name': 'PK-LATER', 'product_id': cls.product.id,
+                                    'expiration_date': now + timedelta(days=90)})
+        cls.lot_expired = Lot.create({'name': 'PK-OLD', 'product_id': cls.product.id,
+                                      'expiration_date': now - timedelta(days=5)})
+        stock = cls.env['stock.warehouse'].search([('company_id', '=', cls.env.company.id)], limit=1).lot_stock_id
+        Quant = cls.env['stock.quant']
+        Quant._update_available_quantity(cls.product, stock, 5, lot_id=cls.lot_soon)
+        Quant._update_available_quantity(cls.product, stock, 8, lot_id=cls.lot_later)
+        Quant._update_available_quantity(cls.product, stock, 100, lot_id=cls.lot_expired)
+
+    def _line(self, qty, product=None):
+        order = self.env['sale.order'].create({'partner_id': self.partner.id})
+        return self.env['sale.order.line'].create({
+            'order_id': order.id, 'product_id': (product or self.product).id, 'product_uom_qty': qty})
+
+    def test_earliest_expiry_with_enough_stock(self):
+        self.assertEqual(self._line(3)._hc_default_batch(), self.lot_soon)
+        self.assertEqual(self._line(7)._hc_default_batch(), self.lot_later)
+
+    def test_no_single_batch_has_enough(self):
+        # 5 + 8 in stock: leave empty so the delivery splits across batches.
+        self.assertFalse(self._line(12)._hc_default_batch())
+
+    def test_no_stock_uses_earliest_valid_batch(self):
+        product = self.env['product.product'].create({
+            'name': 'Picker Syrup', 'type': 'consu', 'is_storable': True, 'tracking': 'lot'})
+        lot = self.env['stock.lot'].create({'name': 'PS-1', 'product_id': product.id,
+                                            'expiration_date': fields.Datetime.now() + timedelta(days=10)})
+        self.assertEqual(self._line(4, product)._hc_default_batch(), lot)
+
+    def test_expired_batch_never_prefilled(self):
+        product = self.env['product.product'].create({
+            'name': 'Picker Drops', 'type': 'consu', 'is_storable': True, 'tracking': 'lot'})
+        self.env['stock.lot'].create({'name': 'PD-OLD', 'product_id': product.id,
+                                      'expiration_date': fields.Datetime.now() - timedelta(days=1)})
+        self.assertFalse(self._line(1, product)._hc_default_batch())
+
+    def test_batch_label(self):
+        label = self.lot_soon.with_context(hc_batch_label=True).display_name
+        self.assertIn('PK-SOON', label)
+        self.assertIn('exp ', label)
+        self.assertIn('5 in stock', label)
+        self.assertEqual(self.lot_soon.display_name, 'PK-SOON')
+
+    def test_checkout_form_prefills_batch(self):
+        form = Form(self.env['sale.order'],
+                    view='hospital_pos_auto_receipt.sale_order_form_pharmacy_checkout')
+        form.partner_id = self.partner
+        with form.order_line.new() as line:
+            line.product_id = self.product
+            self.assertEqual(line.lot_id, self.lot_soon)
+            self.assertEqual(line.expiry_date_only, self.lot_soon.expiration_date.date())
+            line.product_uom_qty = 6
+            # The batch is not changed behind the user's back; it is flagged instead.
+            self.assertEqual(line.lot_id, self.lot_soon)
+            self.assertLess(line.lot_available_qty, line.product_uom_qty)
+        order = form.save()
+        self.assertEqual(order.order_line.lot_id, self.lot_soon)
+
+    def test_clinic_opens_checkout_form(self):
+        form_view = self.env.ref('hospital_pos_auto_receipt.sale_order_form_pharmacy_checkout')
+        action = self.env['sale.order']._hc_checkout_action({'view_mode': 'list,form'})
+        self.assertEqual(action['views'], [(False, 'list'), (form_view.id, 'form')])
+        menu = self.env.ref('hospital_pos_auto_receipt.menu_pharmacy_checkout')
+        self.assertEqual(menu.action, self.env.ref('hospital_pos_auto_receipt.action_pharmacy_checkout'))
+
